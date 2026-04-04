@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, text
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
+import hashlib
 import json
+import mimetypes
 import os
 import io
 import uuid
@@ -99,6 +101,9 @@ class ProjectResponse(BaseModel):
 def ensure_complaint_structured_columns() -> None:
     """Backfill schema columns for existing SQLite DBs without Alembic migrations."""
 
+    if engine.dialect.name != "sqlite":
+        return
+
     complaint_columns = {
         "milestone_name": "TEXT",
         "work_summary": "TEXT",
@@ -121,6 +126,76 @@ def ensure_complaint_structured_columns() -> None:
                 connection.execute(
                     text(f"ALTER TABLE complaints ADD COLUMN {column_name} {definition}")
                 )
+
+
+def infer_media_metadata(complaint: Complaint) -> Dict[str, Any]:
+    """Infer lightweight media metadata for trust evidence rendering."""
+
+    if complaint.voice_file_path:
+        filename = os.path.basename(complaint.voice_file_path) or "voice-note.wav"
+        mime_type, _ = mimetypes.guess_type(filename)
+        size_bytes = (
+            os.path.getsize(complaint.voice_file_path)
+            if os.path.exists(complaint.voice_file_path)
+            else None
+        )
+        return {
+            "media_type": "voice",
+            "media_filename": filename,
+            "media_mime_type": mime_type or "audio/wav",
+            "media_size_bytes": size_bytes,
+        }
+
+    if complaint.file:
+        file_reference = str(complaint.file).strip()
+        clean_reference = file_reference.split("?", 1)[0]
+        filename = os.path.basename(clean_reference) or clean_reference or None
+        mime_type, _ = mimetypes.guess_type(filename or "")
+        size_bytes = os.path.getsize(file_reference) if os.path.exists(file_reference) else None
+        media_type = "image" if mime_type and mime_type.startswith("image/") else "attachment"
+
+        return {
+            "media_type": media_type,
+            "media_filename": filename,
+            "media_mime_type": mime_type,
+            "media_size_bytes": size_bytes,
+        }
+
+    return {
+        "media_type": "text",
+        "media_filename": None,
+        "media_mime_type": "text/plain",
+        "media_size_bytes": None,
+    }
+
+
+def build_complaint_evidence_hash(
+    complaint: Complaint,
+    project_location: Optional[str],
+    media_metadata: Dict[str, Any],
+) -> str:
+    """Build a deterministic evidence hash for quick tamper checks."""
+
+    created_at_value = complaint.created_at.isoformat() if complaint.created_at else ""
+    payload = "|".join(
+        [
+            str(complaint.id or ""),
+            str(complaint.project_id or ""),
+            str(complaint.created_by_id or ""),
+            created_at_value,
+            complaint.description or "",
+            complaint.formal_complaint_text or "",
+            complaint.file or "",
+            complaint.voice_file_path or "",
+            project_location or "",
+            str(media_metadata.get("media_type") or ""),
+            str(media_metadata.get("media_filename") or ""),
+            str(media_metadata.get("media_mime_type") or ""),
+            str(media_metadata.get("media_size_bytes") or ""),
+        ]
+    )
+
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -774,6 +849,12 @@ def get_complaints(
     
     result = []
     for c in complaints:
+        project_location = c.project.location if c.project else None
+        project_latitude = c.project.latitude if c.project else None
+        project_longitude = c.project.longitude if c.project else None
+        media_metadata = infer_media_metadata(c)
+        evidence_hash = build_complaint_evidence_hash(c, project_location, media_metadata)
+
         result.append({
             "id": c.id,
             "project_id": c.project_id,
@@ -795,6 +876,15 @@ def get_complaints(
             "material_cost": c.reported_material_cost,
             "labour_cost": c.reported_labour_cost,
             "is_contractor_update": bool(c.is_contractor_update),
+            "file": c.file,
+            "project_location": project_location,
+            "project_latitude": project_latitude,
+            "project_longitude": project_longitude,
+            "media_type": media_metadata["media_type"],
+            "media_filename": media_metadata["media_filename"],
+            "media_mime_type": media_metadata["media_mime_type"],
+            "media_size_bytes": media_metadata["media_size_bytes"],
+            "evidence_hash": evidence_hash,
         })
     
     return result
@@ -813,6 +903,11 @@ def get_complaint_detail(
     
     # Check completeness
     completeness = check_complaint_completeness(complaint.formal_complaint_text or complaint.description)
+    project_location = complaint.project.location if complaint.project else None
+    project_latitude = complaint.project.latitude if complaint.project else None
+    project_longitude = complaint.project.longitude if complaint.project else None
+    media_metadata = infer_media_metadata(complaint)
+    evidence_hash = build_complaint_evidence_hash(complaint, project_location, media_metadata)
     
     return {
         "id": complaint.id,
@@ -836,6 +931,15 @@ def get_complaint_detail(
         "material_cost": complaint.reported_material_cost,
         "labour_cost": complaint.reported_labour_cost,
         "is_contractor_update": bool(complaint.is_contractor_update),
+        "file": complaint.file,
+        "project_location": project_location,
+        "project_latitude": project_latitude,
+        "project_longitude": project_longitude,
+        "media_type": media_metadata["media_type"],
+        "media_filename": media_metadata["media_filename"],
+        "media_mime_type": media_metadata["media_mime_type"],
+        "media_size_bytes": media_metadata["media_size_bytes"],
+        "evidence_hash": evidence_hash,
         "routing": [
             {
                 "assigned_to": r.assigned_official.full_name,

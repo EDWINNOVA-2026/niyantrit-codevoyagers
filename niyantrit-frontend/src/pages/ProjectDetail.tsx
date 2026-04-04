@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import ImageWithFallback from "../components/ImageWithFallback";
 import Navbar from "../components/Navbar";
-import { useAppContext } from "../context/AppContext";
+import { useAppContext, type Post } from "../context/AppContext";
 import { Progress } from "../components/ui/progress";
 
 type IssueMode = "text" | "voice";
@@ -433,17 +433,19 @@ function ProjectDetail() {
                   <Metric label="Labour" value={formatCurrency(post.labourCost)} />
                 </div>
 
-                  <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                    <Metric label="Category" value={post.complaintCategory || "General"} />
-                    <Metric label="Status" value={post.complaintStatus} />
-                    <Metric label="Severity" value={String(post.severity)} />
+                <TrustEvidenceCard post={post} />
+
+                <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                  <Metric label="Category" value={post.complaintCategory || "General"} />
+                  <Metric label="Status" value={post.complaintStatus} />
+                  <Metric label="Severity" value={String(post.severity)} />
                 </div>
 
-                  <div className="mt-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
-                      Priority Index
-                    </p>
-                    <p className="mt-1 text-sm font-semibold text-foreground">{post.priority}</p>
+                <div className="mt-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                    Priority Index
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">{post.priority}</p>
                 </div>
               </article>
             ))
@@ -477,6 +479,83 @@ function Metric({ label, value }: { label: string; value: string }) {
       <p className="mt-1 text-sm font-semibold text-foreground">{value}</p>
     </div>
   );
+}
+
+function TrustEvidenceCard({ post }: { post: Post }) {
+  const coordinates = formatCoordinates(post.evidenceLatitude, post.evidenceLongitude);
+  const mediaSummary = [
+    formatEvidenceMediaType(post.evidenceMediaType),
+    post.evidenceMediaMimeType,
+    post.evidenceMediaSizeBytes !== null ? formatBytes(post.evidenceMediaSizeBytes) : null,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+
+  return (
+    <section className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50/50 p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">Trust Evidence Card</p>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+        <Metric label="Timestamp" value={formatEvidenceTimestamp(post.createdAt)} />
+        <Metric
+          label="Location"
+          value={coordinates ? `${post.evidenceLocationLabel} (${coordinates})` : post.evidenceLocationLabel}
+        />
+        <Metric label="Media Metadata" value={mediaSummary || "Text submission"} />
+      </div>
+
+      <div className="mt-3 rounded-lg border border-emerald-200 bg-white/80 px-3 py-2">
+        <p className="text-xs font-semibold uppercase tracking-[0.1em] text-emerald-700">Tamper Hash (SHA-256)</p>
+        <p className="mt-1 break-all font-mono text-[11px] text-foreground">{post.evidenceTamperHash}</p>
+        {post.evidenceMediaFilename ? (
+          <p className="mt-1 text-xs text-muted-foreground">File: {post.evidenceMediaFilename}</p>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
+function formatEvidenceTimestamp(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "Unavailable";
+  }
+
+  return parsed.toLocaleString("en-IN");
+}
+
+function formatCoordinates(latitude: number | null, longitude: number | null) {
+  if (latitude === null || longitude === null) {
+    return null;
+  }
+
+  return `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+}
+
+function formatEvidenceMediaType(value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "voice") return "Voice";
+  if (normalized === "image") return "Image";
+  if (normalized === "attachment") return "Attachment";
+  return "Text";
+}
+
+function formatBytes(sizeBytes: number) {
+  if (!Number.isFinite(sizeBytes) || sizeBytes <= 0) {
+    return "0 B";
+  }
+
+  if (sizeBytes < 1024) {
+    return `${Math.round(sizeBytes)} B`;
+  }
+
+  const sizeKb = sizeBytes / 1024;
+  if (sizeKb < 1024) {
+    return `${sizeKb.toFixed(1)} KB`;
+  }
+
+  const sizeMb = sizeKb / 1024;
+  return `${sizeMb.toFixed(2)} MB`;
 }
 
 export default ProjectDetail;

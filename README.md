@@ -139,6 +139,35 @@ This will:
 - Calculate risk scores for all projects
 - Create 5 sample complaints for testing
 
+### Import Teammate PostgreSQL Dump (Custom PGDMP)
+
+If your teammate shared a PostgreSQL dump that starts with `PGDMP` (custom format), use `pg_restore` (not `psql -f`).
+
+```powershell
+# Windows PowerShell
+$env:PGPASSWORD = "<postgres_password>"
+
+& "C:\Program Files\PostgreSQL\17\bin\dropdb.exe" -U postgres -h localhost -p 5432 --if-exists niyantrit
+& "C:\Program Files\PostgreSQL\17\bin\createdb.exe" -U postgres -h localhost -p 5432 niyantrit
+& "C:\Program Files\PostgreSQL\17\bin\pg_restore.exe" -U postgres -h localhost -p 5432 -d niyantrit --clean --if-exists --no-owner --no-acl "niyantrit-backend\niyantrit_DB.sql"
+
+# Verify
+& "C:\Program Files\PostgreSQL\17\bin\psql.exe" -U postgres -h localhost -p 5432 -d niyantrit -c "\\dt"
+```
+
+Then point backend to PostgreSQL:
+
+```env
+DATABASE_URL=postgresql+psycopg2://postgres:<postgres_password>@localhost:5432/niyantrit
+```
+
+Install backend dependencies again after switching database drivers:
+
+```bash
+cd niyantrit-backend
+pip install -r requirements.txt
+```
+
 ### 1-Minute Frontend Setup
 
 ```bash

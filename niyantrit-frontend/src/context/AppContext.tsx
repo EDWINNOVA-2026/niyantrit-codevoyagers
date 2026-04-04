@@ -1,15 +1,17 @@
 import {
   createContext,
-  ReactNode,
   useEffect,
   useContext,
   useMemo,
   useState,
+  type Context,
+  type ReactNode,
 } from "react";
 import { ApiError, apiRequest, toQueryString } from "../lib/api";
 
 export type UserRole = "user" | "tender" | null;
 export type ProjectStatus = "Pending" | "Ongoing" | "Completed";
+export type RiskLevel = "LOW" | "MODERATE" | "HIGH" | "VERY_HIGH" | "CRITICAL" | "UNKNOWN";
 
 const ACCESS_TOKEN_KEY = "niyantrit.accessToken";
 const REFRESH_TOKEN_KEY = "niyantrit.refreshToken";
@@ -41,12 +43,15 @@ interface ApiProject {
   total_funds: number;
   labour_cost?: number;
   material_cost?: number;
+  risk_score?: number | null;
+  risk_level?: string | null;
 }
 
 interface ApiComplaint {
   id: number;
   project_id: number;
   description: string;
+  file?: string | null;
   formal_text?: string | null;
   category?: string | null;
   status: string;
@@ -64,6 +69,14 @@ interface ApiComplaint {
   material_cost?: number | null;
   labour_cost?: number | null;
   is_contractor_update?: boolean | null;
+  project_location?: string | null;
+  project_latitude?: number | null;
+  project_longitude?: number | null;
+  media_type?: string | null;
+  media_filename?: string | null;
+  media_mime_type?: string | null;
+  media_size_bytes?: number | null;
+  evidence_hash?: string | null;
 }
 
 export interface Project {
@@ -73,6 +86,8 @@ export interface Project {
   description: string;
   status: ProjectStatus;
   progress: number;
+  riskScore: number | null;
+  riskLevel: RiskLevel;
   budget: number;
   labourCost: number;
   materialCost: number;
@@ -112,6 +127,14 @@ export interface Post {
   complaintStatus: string;
   severity: number;
   priority: number;
+  evidenceLocationLabel: string;
+  evidenceLatitude: number | null;
+  evidenceLongitude: number | null;
+  evidenceMediaType: string;
+  evidenceMediaFilename: string | null;
+  evidenceMediaMimeType: string | null;
+  evidenceMediaSizeBytes: number | null;
+  evidenceTamperHash: string;
 }
 
 interface NewPostInput {
@@ -199,6 +222,25 @@ function normalizeProjectStatus(status: string): ProjectStatus {
   return "Ongoing";
 }
 
+function normalizeRiskLevel(level: string | null | undefined, status: ProjectStatus): RiskLevel {
+  const normalized = (level || "").trim().toUpperCase();
+
+  if (
+    normalized === "LOW" ||
+    normalized === "MODERATE" ||
+    normalized === "HIGH" ||
+    normalized === "VERY_HIGH" ||
+    normalized === "CRITICAL" ||
+    normalized === "UNKNOWN"
+  ) {
+    return normalized;
+  }
+
+  if (status === "Completed") return "LOW";
+  if (status === "Pending") return "MODERATE";
+  return "HIGH";
+}
+
 function deriveProgress(projectId: string, status: ProjectStatus) {
   if (status === "Completed") return 100;
   const basis = hashSeed(projectId) % 35;
@@ -208,6 +250,11 @@ function deriveProgress(projectId: string, status: ProjectStatus) {
 
 function mapApiProject(project: ApiProject): Project {
   const normalizedStatus = normalizeProjectStatus(project.status);
+  const riskScore =
+    typeof project.risk_score === "number" && Number.isFinite(project.risk_score)
+      ? Math.max(0, Math.min(100, project.risk_score))
+      : null;
+  const riskLevel = normalizeRiskLevel(project.risk_level, normalizedStatus);
   const { city, state } = splitLocation(project.location || "Unknown, India");
   const coords =
     typeof project.latitude === "number" && typeof project.longitude === "number"
@@ -221,6 +268,8 @@ function mapApiProject(project: ApiProject): Project {
     description: `Live backend project record for ${project.project_name}`,
     status: normalizedStatus,
     progress: deriveProgress(project.project_name, normalizedStatus),
+    riskScore,
+    riskLevel,
     budget: project.total_funds,
     labourCost: project.labour_cost || 0,
     materialCost: project.material_cost || 0,
@@ -253,16 +302,66 @@ function mapComplaintAuthorRole(role: string | null | undefined): Exclude<UserRo
   return role === "Contractor" ? "tender" : "user";
 }
 
+function normalizeEvidenceMediaType(
+  mediaType: string | null | undefined,
+  complaint: ApiComplaint
+) {
+  const normalized = (mediaType || "").trim().toLowerCase();
+  if (normalized) {
+    return normalized;
+  }
+
+  if (complaint.file) {
+    return "image";
+  }
+
+  return "text";
+}
+
+function buildClientEvidenceHash(complaint: ApiComplaint) {
+  const seed = [
+    complaint.id,
+    complaint.project_id,
+    complaint.created_at,
+    complaint.description,
+    complaint.formal_text || "",
+    complaint.file || "",
+    complaint.project_location || "",
+  ].join("|");
+
+  const segmentA = hashSeed(seed).toString(16).padStart(8, "0");
+  const segmentB = hashSeed(`${seed}|formal`).toString(16).padStart(8, "0");
+  const segmentC = hashSeed(`${seed}|location`).toString(16).padStart(8, "0");
+  return `client-${segmentA}${segmentB}${segmentC}`;
+}
+
 function mapApiComplaint(complaint: ApiComplaint): Post {
   const authorRole = mapComplaintAuthorRole(complaint.created_by_role);
   const milestoneName = complaint.milestone_name || null;
   const workSummary = complaint.work_summary || null;
+  const hasDirectImage =
+    typeof complaint.file === "string" && /^(https?:\/\/|data:image\/)/i.test(complaint.file);
+  const evidenceLatitude =
+    typeof complaint.project_latitude === "number" && Number.isFinite(complaint.project_latitude)
+      ? complaint.project_latitude
+      : null;
+  const evidenceLongitude =
+    typeof complaint.project_longitude === "number" && Number.isFinite(complaint.project_longitude)
+      ? complaint.project_longitude
+      : null;
+  const evidenceMediaSizeBytes =
+    typeof complaint.media_size_bytes === "number" && Number.isFinite(complaint.media_size_bytes)
+      ? Math.max(0, complaint.media_size_bytes)
+      : null;
+  const evidenceTamperHash = complaint.evidence_hash || buildClientEvidenceHash(complaint);
 
   return {
     id: String(complaint.id),
     projectId: String(complaint.project_id),
     caption: workSummary || complaint.formal_text || complaint.description,
-    imageUrl: `https://picsum.photos/seed/complaint-${complaint.id}/960/560`,
+    imageUrl: hasDirectImage
+      ? String(complaint.file)
+      : `https://picsum.photos/seed/complaint-${complaint.id}/960/560`,
     authorName: complaint.created_by || "Anonymous Reporter",
     authorRole,
     createdAt: complaint.created_at,
@@ -281,6 +380,14 @@ function mapApiComplaint(complaint: ApiComplaint): Post {
     complaintStatus: complaint.status,
     severity: complaint.severity,
     priority: complaint.priority,
+    evidenceLocationLabel: complaint.project_location || "Project location unavailable",
+    evidenceLatitude,
+    evidenceLongitude,
+    evidenceMediaType: normalizeEvidenceMediaType(complaint.media_type, complaint),
+    evidenceMediaFilename: complaint.media_filename || null,
+    evidenceMediaMimeType: complaint.media_mime_type || null,
+    evidenceMediaSizeBytes,
+    evidenceTamperHash,
   };
 }
 
@@ -305,7 +412,17 @@ function humanizeApiError(error: unknown) {
   return "An unexpected error occurred while contacting the backend.";
 }
 
-const AppContext = createContext<AppContextValue | null>(null);
+type AppContextStore = typeof globalThis & {
+  __NIYANTRIT_APP_CONTEXT__?: Context<AppContextValue | null>;
+};
+
+const appContextStore = globalThis as AppContextStore;
+const AppContext =
+  appContextStore.__NIYANTRIT_APP_CONTEXT__ || createContext<AppContextValue | null>(null);
+
+if (!appContextStore.__NIYANTRIT_APP_CONTEXT__) {
+  appContextStore.__NIYANTRIT_APP_CONTEXT__ = AppContext;
+}
 
 interface AppProviderProps {
   children: ReactNode;

@@ -212,8 +212,13 @@ function Issues() {
               Circle size and color indicate complaint density per project location.
             </p>
 
-            <div className="mt-4 h-[520px] overflow-hidden rounded-xl border border-border">
-              <MapContainer center={INDIA_CENTER} zoom={5} scrollWheelZoom className="h-full w-full">
+            <div className="relative isolate z-0 mt-4 h-[520px] overflow-hidden rounded-xl border border-border">
+              <MapContainer
+                center={INDIA_CENTER}
+                zoom={5}
+                scrollWheelZoom
+                className="relative z-0 h-full w-full"
+              >
                 <TileLayer
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
