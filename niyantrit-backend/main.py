@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, F
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, text
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 import json
@@ -61,6 +61,15 @@ class ComplaintSubmitRequest(BaseModel):
     description: str
     severity: Optional[int] = 5
     file: Optional[str] = None
+    milestone_name: Optional[str] = None
+    work_summary: Optional[str] = None
+    next_action: Optional[str] = None
+    blockers: Optional[str] = None
+    target_date: Optional[str] = None
+    progress_update: Optional[float] = None
+    material_cost: Optional[float] = None
+    labour_cost: Optional[float] = None
+    is_contractor_update: Optional[bool] = False
 
 class ComplaintResponse(BaseModel):
     id: int
@@ -86,8 +95,36 @@ class ProjectResponse(BaseModel):
     class Config:
         from_attributes = True
 
+
+def ensure_complaint_structured_columns() -> None:
+    """Backfill schema columns for existing SQLite DBs without Alembic migrations."""
+
+    complaint_columns = {
+        "milestone_name": "TEXT",
+        "work_summary": "TEXT",
+        "next_action": "TEXT",
+        "blockers": "TEXT",
+        "target_date": "TEXT",
+        "progress_update": "REAL",
+        "reported_material_cost": "REAL",
+        "reported_labour_cost": "REAL",
+        "is_contractor_update": "INTEGER DEFAULT 0",
+    }
+
+    with engine.begin() as connection:
+        existing_columns = {
+            row[1] for row in connection.execute(text("PRAGMA table_info(complaints)"))
+        }
+
+        for column_name, definition in complaint_columns.items():
+            if column_name not in existing_columns:
+                connection.execute(
+                    text(f"ALTER TABLE complaints ADD COLUMN {column_name} {definition}")
+                )
+
 # Create tables
 Base.metadata.create_all(bind=engine)
+ensure_complaint_structured_columns()
 
 app = FastAPI(
     title="Niyantrit Complaint Intelligence API",
@@ -516,8 +553,37 @@ def submit_text_complaint(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Enhance complaint text
-    formal_text = enhance_text(request.description, add_structure=True)
+    normalized_material_cost = max(0.0, float(request.material_cost or 0.0))
+    normalized_labour_cost = max(0.0, float(request.labour_cost or 0.0))
+    normalized_progress = (
+        max(0.0, min(100.0, float(request.progress_update)))
+        if request.progress_update is not None
+        else None
+    )
+
+    severity_value = max(1, min(10, int(request.severity or 5)))
+
+    milestone_fields_present = any([
+        bool(request.milestone_name and request.milestone_name.strip()),
+        bool(request.work_summary and request.work_summary.strip()),
+        bool(request.next_action and request.next_action.strip()),
+        bool(request.target_date and request.target_date.strip()),
+        request.progress_update is not None,
+        request.material_cost is not None,
+        request.labour_cost is not None,
+    ])
+
+    is_contractor_update = (
+        current_user.role == UserRole.CONTRACTOR
+        and (bool(request.is_contractor_update) or milestone_fields_present)
+    )
+
+    text_for_analysis = request.description
+    if is_contractor_update and request.work_summary:
+        text_for_analysis = request.work_summary
+
+    # Enhance complaint/update text
+    formal_text = enhance_text(text_for_analysis, add_structure=True)
     
     # Classify complaint
     category, confidence = classify_complaint(formal_text)
@@ -528,10 +594,19 @@ def submit_text_complaint(
         created_by_id=current_user.id,
         description=request.description,
         formal_complaint_text=formal_text,
+        milestone_name=request.milestone_name.strip() if request.milestone_name else None,
+        work_summary=request.work_summary.strip() if request.work_summary else None,
+        next_action=request.next_action.strip() if request.next_action else None,
+        blockers=request.blockers.strip() if request.blockers else None,
+        target_date=request.target_date.strip() if request.target_date else None,
+        progress_update=normalized_progress,
+        reported_material_cost=normalized_material_cost,
+        reported_labour_cost=normalized_labour_cost,
+        is_contractor_update=is_contractor_update,
         category=category,
         nlp_confidence_score=confidence,
-        severity=request.severity,
-        priority=int(confidence * 10),  # Higher confidence = higher priority
+        severity=severity_value,
+        priority=max(1, min(10, int(confidence * 10))),  # Higher confidence = higher priority
         file=request.file
     )
     
@@ -565,6 +640,7 @@ def submit_text_complaint(
     return {
         "complaint_id": new_complaint.id,
         "status": "submitted",
+        "is_contractor_update": new_complaint.is_contractor_update,
         "category": category.value if category else None,
         "confidence": confidence,
         "formal_text_preview": formal_text[:200] + "..." if len(formal_text) > 200 else formal_text
@@ -708,7 +784,17 @@ def get_complaints(
             "priority": c.priority,
             "severity": c.severity,
             "created_at": c.created_at,
-            "created_by": c.created_by.full_name if c.created_by else None
+            "created_by": c.created_by.full_name if c.created_by else None,
+            "created_by_role": c.created_by.role.value if c.created_by and c.created_by.role else None,
+            "milestone_name": c.milestone_name,
+            "work_summary": c.work_summary,
+            "next_action": c.next_action,
+            "blockers": c.blockers,
+            "target_date": c.target_date,
+            "progress_update": c.progress_update,
+            "material_cost": c.reported_material_cost,
+            "labour_cost": c.reported_labour_cost,
+            "is_contractor_update": bool(c.is_contractor_update),
         })
     
     return result
@@ -740,6 +826,16 @@ def get_complaint_detail(
         "nlp_confidence": complaint.nlp_confidence_score,
         "created_at": complaint.created_at,
         "created_by": complaint.created_by.full_name if complaint.created_by else None,
+        "created_by_role": complaint.created_by.role.value if complaint.created_by and complaint.created_by.role else None,
+        "milestone_name": complaint.milestone_name,
+        "work_summary": complaint.work_summary,
+        "next_action": complaint.next_action,
+        "blockers": complaint.blockers,
+        "target_date": complaint.target_date,
+        "progress_update": complaint.progress_update,
+        "material_cost": complaint.reported_material_cost,
+        "labour_cost": complaint.reported_labour_cost,
+        "is_contractor_update": bool(complaint.is_contractor_update),
         "routing": [
             {
                 "assigned_to": r.assigned_official.full_name,

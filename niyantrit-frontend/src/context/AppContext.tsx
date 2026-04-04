@@ -54,6 +54,16 @@ interface ApiComplaint {
   severity: number;
   created_at: string;
   created_by?: string | null;
+  created_by_role?: string | null;
+  milestone_name?: string | null;
+  work_summary?: string | null;
+  next_action?: string | null;
+  blockers?: string | null;
+  target_date?: string | null;
+  progress_update?: number | null;
+  material_cost?: number | null;
+  labour_cost?: number | null;
+  is_contractor_update?: boolean | null;
 }
 
 export interface Project {
@@ -92,6 +102,12 @@ export interface Post {
   progress: number;
   materialCost: number;
   labourCost: number;
+  milestoneName: string | null;
+  workSummary: string | null;
+  nextAction: string | null;
+  blockers: string | null;
+  targetDate: string | null;
+  isContractorUpdate: boolean;
   complaintCategory: string | null;
   complaintStatus: string;
   severity: number;
@@ -100,11 +116,15 @@ export interface Post {
 
 interface NewPostInput {
   projectId: string;
-  caption: string;
   imageUrl: string;
   progress: number;
   materialCost: number;
   labourCost: number;
+  milestoneName: string;
+  workSummary: string;
+  nextAction: string;
+  blockers: string;
+  targetDate: string;
 }
 
 interface TextIssueInput {
@@ -214,6 +234,10 @@ function mapApiProject(project: ApiProject): Project {
 }
 
 function derivePostProgress(complaint: ApiComplaint) {
+  if (typeof complaint.progress_update === "number" && Number.isFinite(complaint.progress_update)) {
+    return Math.max(0, Math.min(100, complaint.progress_update));
+  }
+
   return Math.max(5, Math.min(95, 100 - complaint.severity * 7));
 }
 
@@ -225,18 +249,34 @@ function mapUiRoleToBackendRole(role: Exclude<UserRole, null>): "Citizen" | "Con
   return role === "tender" ? "Contractor" : "Citizen";
 }
 
+function mapComplaintAuthorRole(role: string | null | undefined): Exclude<UserRole, null> {
+  return role === "Contractor" ? "tender" : "user";
+}
+
 function mapApiComplaint(complaint: ApiComplaint): Post {
+  const authorRole = mapComplaintAuthorRole(complaint.created_by_role);
+  const milestoneName = complaint.milestone_name || null;
+  const workSummary = complaint.work_summary || null;
+
   return {
     id: String(complaint.id),
     projectId: String(complaint.project_id),
-    caption: complaint.formal_text || complaint.description,
+    caption: workSummary || complaint.formal_text || complaint.description,
     imageUrl: `https://picsum.photos/seed/complaint-${complaint.id}/960/560`,
     authorName: complaint.created_by || "Anonymous Reporter",
-    authorRole: "user",
+    authorRole,
     createdAt: complaint.created_at,
     progress: derivePostProgress(complaint),
-    materialCost: 0,
-    labourCost: 0,
+    materialCost: Math.max(0, complaint.material_cost || 0),
+    labourCost: Math.max(0, complaint.labour_cost || 0),
+    milestoneName,
+    workSummary,
+    nextAction: complaint.next_action || null,
+    blockers: complaint.blockers || null,
+    targetDate: complaint.target_date || null,
+    isContractorUpdate:
+      Boolean(complaint.is_contractor_update) ||
+      (authorRole === "tender" && Boolean(milestoneName || workSummary)),
     complaintCategory: complaint.category || null,
     complaintStatus: complaint.status,
     severity: complaint.severity,
@@ -551,12 +591,8 @@ export function AppProvider({ children }: AppProviderProps) {
 
     try {
       const severity = Math.max(1, Math.min(10, 10 - Math.floor(payload.progress / 10)));
-      const composedDescription = [
-        payload.caption,
-        `Progress: ${payload.progress}%`,
-        `Material Cost (INR): ${payload.materialCost}`,
-        `Labour Cost (INR): ${payload.labourCost}`,
-      ].join("\n");
+      const composedDescription =
+        payload.workSummary.trim() || payload.milestoneName.trim() || "Contractor milestone update";
 
       await apiRequest<{ complaint_id: number }>("/complaints/submit-text", {
         method: "POST",
@@ -566,6 +602,15 @@ export function AppProvider({ children }: AppProviderProps) {
           description: composedDescription,
           severity,
           file: payload.imageUrl,
+          milestone_name: payload.milestoneName,
+          work_summary: payload.workSummary,
+          next_action: payload.nextAction,
+          blockers: payload.blockers,
+          target_date: payload.targetDate,
+          progress_update: payload.progress,
+          material_cost: payload.materialCost,
+          labour_cost: payload.labourCost,
+          is_contractor_update: true,
         },
       });
 

@@ -107,6 +107,17 @@ class Complaint(Base):
     transcribed_text = Column(String, nullable=True)  # From voice input
     formal_complaint_text = Column(String, nullable=True)  # AI-enhanced formal version
     voice_file_path = Column(String, nullable=True)  # Path to voice recording
+
+    # Structured contractor update fields
+    milestone_name = Column(String, nullable=True)
+    work_summary = Column(String, nullable=True)
+    next_action = Column(String, nullable=True)
+    blockers = Column(String, nullable=True)
+    target_date = Column(String, nullable=True)  # ISO date string (YYYY-MM-DD)
+    progress_update = Column(Float, nullable=True)  # 0-100
+    reported_material_cost = Column(Float, nullable=True)
+    reported_labour_cost = Column(Float, nullable=True)
+    is_contractor_update = Column(Boolean, default=False)
     
     # Categorization and routing
     category = Column(SQLEnum(ComplaintCategory), nullable=True)
