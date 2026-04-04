@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Niyantrit Dashboard</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 20px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #333;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Niyantrit Project Dashboard</h2>
+
+<table id="projectTable">
+  <thead>
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Location</th>
+      <th>Contractor ID</th>
+      <th>Total Funds</th>
+      <th>Labour cost </th>
+      <th>Materials cost</th>
+      <th>Other costs</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+fetch('niyantrit_projects_dataset_200.json')
+  .then(response => response.json())
+  .then(data => {
+    console.log("DATA:", data);  // 👈 ADD THIS
+
+    const table = document.querySelector("#projectTable tbody");
+
+    data.forEach(project => {
+      let row = `
+        <tr>
+          <td>${project.project_id}</td>
+          <td>${project.project_name}</td>
+          <td>${project.location}</td>
+          <td>${project.contractor_id}</td>
+          <td>${project.total_funds}</td>
+          <td>${project.labour_cost}</td>
+          <td>${project.material_cost}</td>
+          <td>${project.other_cost}</td>
+        </tr>
+      `;
+      table.innerHTML += row;
+    });
+  });
+  
+</script>
+
+</body>
+</html>

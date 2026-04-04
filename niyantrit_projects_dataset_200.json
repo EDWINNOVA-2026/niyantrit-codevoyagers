@@ -1,0 +1,2002 @@
+[
+  {
+    "project_id": "1",
+    "project_name": "Project_1",
+    "location": "Semi-Urban",
+    "contractor_id": "1048",
+    "total_funds": "27158609",
+    "labour_cost": "12728071",
+    "material_cost": "11901815",
+    "other_cost": "4358050"
+  },
+  {
+    "project_id": "2",
+    "project_name": "Project_2",
+    "location": "Urban",
+    "contractor_id": "1048",
+    "total_funds": "33559736",
+    "labour_cost": "19134716",
+    "material_cost": "12145272",
+    "other_cost": "6381553"
+  },
+  {
+    "project_id": "3",
+    "project_name": "Project_3",
+    "location": "Semi-Urban",
+    "contractor_id": "1011",
+    "total_funds": "9685687",
+    "labour_cost": "1968628",
+    "material_cost": "3964167",
+    "other_cost": "1828999"
+  },
+  {
+    "project_id": "4",
+    "project_name": "Project_4",
+    "location": "Semi-Urban",
+    "contractor_id": "1038",
+    "total_funds": "30524204",
+    "labour_cost": "14395660",
+    "material_cost": "13767184",
+    "other_cost": "3590437"
+  },
+  {
+    "project_id": "5",
+    "project_name": "Project_5",
+    "location": "Urban",
+    "contractor_id": "1001",
+    "total_funds": "15400027",
+    "labour_cost": "3501750",
+    "material_cost": "7809637",
+    "other_cost": "1031581"
+  },
+  {
+    "project_id": "6",
+    "project_name": "Project_6",
+    "location": "Urban",
+    "contractor_id": "1002",
+    "total_funds": "49215257",
+    "labour_cost": "14557582",
+    "material_cost": "15345004",
+    "other_cost": "9731144"
+  },
+  {
+    "project_id": "7",
+    "project_name": "Project_7",
+    "location": "Semi-Urban",
+    "contractor_id": "1048",
+    "total_funds": "22768806",
+    "labour_cost": "11043294",
+    "material_cost": "12291127",
+    "other_cost": "4003546"
+  },
+  {
+    "project_id": "8",
+    "project_name": "Project_8",
+    "location": "Rural",
+    "contractor_id": "1036",
+    "total_funds": "7012440",
+    "labour_cost": "3402310",
+    "material_cost": "3424666",
+    "other_cost": "481750"
+  },
+  {
+    "project_id": "9",
+    "project_name": "Project_9",
+    "location": "Semi-Urban",
+    "contractor_id": "1048",
+    "total_funds": "12931395",
+    "labour_cost": "4810884",
+    "material_cost": "4196596",
+    "other_cost": "243273"
+  },
+  {
+    "project_id": "10",
+    "project_name": "Project_10",
+    "location": "Semi-Urban",
+    "contractor_id": "1016",
+    "total_funds": "6599628",
+    "labour_cost": "2570892",
+    "material_cost": "3709476",
+    "other_cost": "1191130"
+  },
+  {
+    "project_id": "11",
+    "project_name": "Project_11",
+    "location": "Semi-Urban",
+    "contractor_id": "1048",
+    "total_funds": "29593907",
+    "labour_cost": "9900157",
+    "material_cost": "17053835",
+    "other_cost": "3782862"
+  },
+  {
+    "project_id": "12",
+    "project_name": "Project_12",
+    "location": "Semi-Urban",
+    "contractor_id": "1001",
+    "total_funds": "40610400",
+    "labour_cost": "11694302",
+    "material_cost": "12927240",
+    "other_cost": "5632309"
+  },
+  {
+    "project_id": "13",
+    "project_name": "Project_13",
+    "location": "Urban",
+    "contractor_id": "1001",
+    "total_funds": "36753447",
+    "labour_cost": "10974555",
+    "material_cost": "14078896",
+    "other_cost": "4037381"
+  },
+  {
+    "project_id": "14",
+    "project_name": "Project_14",
+    "location": "Semi-Urban",
+    "contractor_id": "1027",
+    "total_funds": "26951949",
+    "labour_cost": "10828094",
+    "material_cost": "14604193",
+    "other_cost": "1568987"
+  },
+  {
+    "project_id": "15",
+    "project_name": "Project_15",
+    "location": "Rural",
+    "contractor_id": "1022",
+    "total_funds": "17222573",
+    "labour_cost": "7331862",
+    "material_cost": "9032859",
+    "other_cost": "1727072"
+  },
+  {
+    "project_id": "16",
+    "project_name": "Project_16",
+    "location": "Urban",
+    "contractor_id": "1036",
+    "total_funds": "42892022",
+    "labour_cost": "18764132",
+    "material_cost": "15241950",
+    "other_cost": "7310002"
+  },
+  {
+    "project_id": "17",
+    "project_name": "Project_17",
+    "location": "Rural",
+    "contractor_id": "1031",
+    "total_funds": "3003771",
+    "labour_cost": "1312303",
+    "material_cost": "1089782",
+    "other_cost": "152275"
+  },
+  {
+    "project_id": "18",
+    "project_name": "Project_18",
+    "location": "Rural",
+    "contractor_id": "1032",
+    "total_funds": "3677825",
+    "labour_cost": "836197",
+    "material_cost": "1512106",
+    "other_cost": "367873"
+  },
+  {
+    "project_id": "19",
+    "project_name": "Project_19",
+    "location": "Rural",
+    "contractor_id": "1000",
+    "total_funds": "1496161",
+    "labour_cost": "521151",
+    "material_cost": "666325",
+    "other_cost": "164166"
+  },
+  {
+    "project_id": "20",
+    "project_name": "Project_20",
+    "location": "Rural",
+    "contractor_id": "1018",
+    "total_funds": "4683839",
+    "labour_cost": "1017646",
+    "material_cost": "2273893",
+    "other_cost": "611753"
+  },
+  {
+    "project_id": "21",
+    "project_name": "Project_21",
+    "location": "Urban",
+    "contractor_id": "1001",
+    "total_funds": "1166326",
+    "labour_cost": "425544",
+    "material_cost": "143693",
+    "other_cost": "219244"
+  },
+  {
+    "project_id": "22",
+    "project_name": "Project_22",
+    "location": "Urban",
+    "contractor_id": "1043",
+    "total_funds": "1149150",
+    "labour_cost": "687681",
+    "material_cost": "504201",
+    "other_cost": "117158"
+  },
+  {
+    "project_id": "23",
+    "project_name": "Project_23",
+    "location": "Rural",
+    "contractor_id": "1025",
+    "total_funds": "20653173",
+    "labour_cost": "17335452",
+    "material_cost": "10827245",
+    "other_cost": "2107511"
+  },
+  {
+    "project_id": "24",
+    "project_name": "Project_24",
+    "location": "Rural",
+    "contractor_id": "1031",
+    "total_funds": "618834",
+    "labour_cost": "188914",
+    "material_cost": "192460",
+    "other_cost": "99400"
+  },
+  {
+    "project_id": "25",
+    "project_name": "Project_25",
+    "location": "Urban",
+    "contractor_id": "1005",
+    "total_funds": "49439582",
+    "labour_cost": "11624239",
+    "material_cost": "18575987",
+    "other_cost": "5825598"
+  },
+  {
+    "project_id": "26",
+    "project_name": "Project_26",
+    "location": "Urban",
+    "contractor_id": "1031",
+    "total_funds": "23225756",
+    "labour_cost": "5641478",
+    "material_cost": "11938151",
+    "other_cost": "1943780"
+  },
+  {
+    "project_id": "27",
+    "project_name": "Project_27",
+    "location": "Urban",
+    "contractor_id": "1003",
+    "total_funds": "46922165",
+    "labour_cost": "20103951",
+    "material_cost": "26678162",
+    "other_cost": "5530524"
+  },
+  {
+    "project_id": "28",
+    "project_name": "Project_28",
+    "location": "Semi-Urban",
+    "contractor_id": "1010",
+    "total_funds": "4922201",
+    "labour_cost": "1897338",
+    "material_cost": "2232234",
+    "other_cost": "350109"
+  },
+  {
+    "project_id": "29",
+    "project_name": "Project_29",
+    "location": "Semi-Urban",
+    "contractor_id": "1016",
+    "total_funds": "1579600",
+    "labour_cost": "363840",
+    "material_cost": "726037",
+    "other_cost": "120773"
+  },
+  {
+    "project_id": "30",
+    "project_name": "Project_30",
+    "location": "Semi-Urban",
+    "contractor_id": "1037",
+    "total_funds": "26691539",
+    "labour_cost": "6011789",
+    "material_cost": "8865637",
+    "other_cost": "3329907"
+  },
+  {
+    "project_id": "31",
+    "project_name": "Project_31",
+    "location": "Rural",
+    "contractor_id": "1023",
+    "total_funds": "33076169",
+    "labour_cost": "13570845",
+    "material_cost": "14362456",
+    "other_cost": "3732275"
+  },
+  {
+    "project_id": "32",
+    "project_name": "Project_32",
+    "location": "Semi-Urban",
+    "contractor_id": "1004",
+    "total_funds": "43881573",
+    "labour_cost": "9734201",
+    "material_cost": "20176096",
+    "other_cost": "8215810"
+  },
+  {
+    "project_id": "33",
+    "project_name": "Project_33",
+    "location": "Rural",
+    "contractor_id": "1033",
+    "total_funds": "27947054",
+    "labour_cost": "22463965",
+    "material_cost": "10417017",
+    "other_cost": "2916528"
+  },
+  {
+    "project_id": "34",
+    "project_name": "Project_34",
+    "location": "Rural",
+    "contractor_id": "1005",
+    "total_funds": "4003157",
+    "labour_cost": "1648790",
+    "material_cost": "1524293",
+    "other_cost": "548785"
+  },
+  {
+    "project_id": "35",
+    "project_name": "Project_35",
+    "location": "Semi-Urban",
+    "contractor_id": "1021",
+    "total_funds": "25550090",
+    "labour_cost": "5733558",
+    "material_cost": "10556920",
+    "other_cost": "3700665"
+  },
+  {
+    "project_id": "36",
+    "project_name": "Project_36",
+    "location": "Rural",
+    "contractor_id": "1010",
+    "total_funds": "9349851",
+    "labour_cost": "2107936",
+    "material_cost": "858376",
+    "other_cost": "485857"
+  },
+  {
+    "project_id": "37",
+    "project_name": "Project_37",
+    "location": "Semi-Urban",
+    "contractor_id": "1047",
+    "total_funds": "28925184",
+    "labour_cost": "14346656",
+    "material_cost": "11472414",
+    "other_cost": "4325200"
+  },
+  {
+    "project_id": "38",
+    "project_name": "Project_38",
+    "location": "Semi-Urban",
+    "contractor_id": "1015",
+    "total_funds": "19262804",
+    "labour_cost": "6015412",
+    "material_cost": "7000765",
+    "other_cost": "1477560"
+  },
+  {
+    "project_id": "39",
+    "project_name": "Project_39",
+    "location": "Urban",
+    "contractor_id": "1032",
+    "total_funds": "25917275",
+    "labour_cost": "8065265",
+    "material_cost": "10321534",
+    "other_cost": "5032112"
+  },
+  {
+    "project_id": "40",
+    "project_name": "Project_40",
+    "location": "Semi-Urban",
+    "contractor_id": "1008",
+    "total_funds": "18281862",
+    "labour_cost": "8114219",
+    "material_cost": "6141401",
+    "other_cost": "1321767"
+  },
+  {
+    "project_id": "41",
+    "project_name": "Project_41",
+    "location": "Urban",
+    "contractor_id": "1005",
+    "total_funds": "31520227",
+    "labour_cost": "15261292",
+    "material_cost": "17876954",
+    "other_cost": "3536368"
+  },
+  {
+    "project_id": "42",
+    "project_name": "Project_42",
+    "location": "Semi-Urban",
+    "contractor_id": "1015",
+    "total_funds": "21144716",
+    "labour_cost": "10483556",
+    "material_cost": "10108817",
+    "other_cost": "1327939"
+  },
+  {
+    "project_id": "43",
+    "project_name": "Project_43",
+    "location": "Semi-Urban",
+    "contractor_id": "1028",
+    "total_funds": "30049535",
+    "labour_cost": "12801506",
+    "material_cost": "15136873",
+    "other_cost": "5995817"
+  },
+  {
+    "project_id": "44",
+    "project_name": "Project_44",
+    "location": "Urban",
+    "contractor_id": "1002",
+    "total_funds": "949395",
+    "labour_cost": "297044",
+    "material_cost": "509589",
+    "other_cost": "118986"
+  },
+  {
+    "project_id": "45",
+    "project_name": "Project_45",
+    "location": "Urban",
+    "contractor_id": "1019",
+    "total_funds": "22421117",
+    "labour_cost": "5045877",
+    "material_cost": "10079024",
+    "other_cost": "3123435"
+  },
+  {
+    "project_id": "46",
+    "project_name": "Project_46",
+    "location": "Semi-Urban",
+    "contractor_id": "1035",
+    "total_funds": "40808782",
+    "labour_cost": "17676082",
+    "material_cost": "13306767",
+    "other_cost": "2451035"
+  },
+  {
+    "project_id": "47",
+    "project_name": "Project_47",
+    "location": "Rural",
+    "contractor_id": "1018",
+    "total_funds": "32030803",
+    "labour_cost": "11772001",
+    "material_cost": "14770427",
+    "other_cost": "5204815"
+  },
+  {
+    "project_id": "48",
+    "project_name": "Project_48",
+    "location": "Urban",
+    "contractor_id": "1025",
+    "total_funds": "33766319",
+    "labour_cost": "11050588",
+    "material_cost": "16074535",
+    "other_cost": "2751476"
+  },
+  {
+    "project_id": "49",
+    "project_name": "Project_49",
+    "location": "Rural",
+    "contractor_id": "1002",
+    "total_funds": "31003180",
+    "labour_cost": "14630596",
+    "material_cost": "16234252",
+    "other_cost": "5726539"
+  },
+  {
+    "project_id": "50",
+    "project_name": "Project_50",
+    "location": "Rural",
+    "contractor_id": "1018",
+    "total_funds": "3879569",
+    "labour_cost": "905333",
+    "material_cost": "1666266",
+    "other_cost": "313356"
+  },
+  {
+    "project_id": "51",
+    "project_name": "Project_51",
+    "location": "Rural",
+    "contractor_id": "1019",
+    "total_funds": "3400603",
+    "labour_cost": "1182687",
+    "material_cost": "1150335",
+    "other_cost": "267298"
+  },
+  {
+    "project_id": "52",
+    "project_name": "Project_52",
+    "location": "Urban",
+    "contractor_id": "1031",
+    "total_funds": "49763721",
+    "labour_cost": "10122244",
+    "material_cost": "19165639",
+    "other_cost": "2761013"
+  },
+  {
+    "project_id": "53",
+    "project_name": "Project_53",
+    "location": "Rural",
+    "contractor_id": "1006",
+    "total_funds": "45410237",
+    "labour_cost": "15466644",
+    "material_cost": "18569367",
+    "other_cost": "5486012"
+  },
+  {
+    "project_id": "54",
+    "project_name": "Project_54",
+    "location": "Urban",
+    "contractor_id": "1040",
+    "total_funds": "42665906",
+    "labour_cost": "9253850",
+    "material_cost": "21067365",
+    "other_cost": "5748214"
+  },
+  {
+    "project_id": "55",
+    "project_name": "Project_55",
+    "location": "Rural",
+    "contractor_id": "1032",
+    "total_funds": "35701143",
+    "labour_cost": "8412809",
+    "material_cost": "16823574",
+    "other_cost": "2136938"
+  },
+  {
+    "project_id": "56",
+    "project_name": "Project_56",
+    "location": "Semi-Urban",
+    "contractor_id": "1039",
+    "total_funds": "22864990",
+    "labour_cost": "5379168",
+    "material_cost": "9302141",
+    "other_cost": "3803114"
+  },
+  {
+    "project_id": "57",
+    "project_name": "Project_57",
+    "location": "Semi-Urban",
+    "contractor_id": "1038",
+    "total_funds": "6819707",
+    "labour_cost": "2692168",
+    "material_cost": "4064235",
+    "other_cost": "804679"
+  },
+  {
+    "project_id": "58",
+    "project_name": "Project_58",
+    "location": "Urban",
+    "contractor_id": "1017",
+    "total_funds": "42022233",
+    "labour_cost": "17809588",
+    "material_cost": "20243473",
+    "other_cost": "5406519"
+  },
+  {
+    "project_id": "59",
+    "project_name": "Project_59",
+    "location": "Semi-Urban",
+    "contractor_id": "1039",
+    "total_funds": "1923286",
+    "labour_cost": "721252",
+    "material_cost": "713862",
+    "other_cost": "223321"
+  },
+  {
+    "project_id": "60",
+    "project_name": "Project_60",
+    "location": "Semi-Urban",
+    "contractor_id": "1000",
+    "total_funds": "4195961",
+    "labour_cost": "2050363",
+    "material_cost": "416073",
+    "other_cost": "462035"
+  },
+  {
+    "project_id": "61",
+    "project_name": "Project_61",
+    "location": "Rural",
+    "contractor_id": "1010",
+    "total_funds": "42271748",
+    "labour_cost": "13208280",
+    "material_cost": "14620011",
+    "other_cost": "5662133"
+  },
+  {
+    "project_id": "62",
+    "project_name": "Project_62",
+    "location": "Urban",
+    "contractor_id": "1027",
+    "total_funds": "41402772",
+    "labour_cost": "11829336",
+    "material_cost": "15475831",
+    "other_cost": "3034245"
+  },
+  {
+    "project_id": "63",
+    "project_name": "Project_63",
+    "location": "Rural",
+    "contractor_id": "1024",
+    "total_funds": "12302429",
+    "labour_cost": "5666249",
+    "material_cost": "4283760",
+    "other_cost": "950845"
+  },
+  {
+    "project_id": "64",
+    "project_name": "Project_64",
+    "location": "Rural",
+    "contractor_id": "1049",
+    "total_funds": "34237494",
+    "labour_cost": "9144107",
+    "material_cost": "12187524",
+    "other_cost": "6137681"
+  },
+  {
+    "project_id": "65",
+    "project_name": "Project_65",
+    "location": "Rural",
+    "contractor_id": "1022",
+    "total_funds": "28157342",
+    "labour_cost": "13768004",
+    "material_cost": "10855459",
+    "other_cost": "5403881"
+  },
+  {
+    "project_id": "66",
+    "project_name": "Project_66",
+    "location": "Rural",
+    "contractor_id": "1030",
+    "total_funds": "36896424",
+    "labour_cost": "7513821",
+    "material_cost": "3896395",
+    "other_cost": "3910888"
+  },
+  {
+    "project_id": "67",
+    "project_name": "Project_67",
+    "location": "Rural",
+    "contractor_id": "1029",
+    "total_funds": "4794539",
+    "labour_cost": "2353944",
+    "material_cost": "2728234",
+    "other_cost": "434441"
+  },
+  {
+    "project_id": "68",
+    "project_name": "Project_68",
+    "location": "Rural",
+    "contractor_id": "1041",
+    "total_funds": "12109076",
+    "labour_cost": "2578603",
+    "material_cost": "3924189",
+    "other_cost": "1775189"
+  },
+  {
+    "project_id": "69",
+    "project_name": "Project_69",
+    "location": "Rural",
+    "contractor_id": "1034",
+    "total_funds": "49112992",
+    "labour_cost": "41314696",
+    "material_cost": "22461994",
+    "other_cost": "5466773"
+  },
+  {
+    "project_id": "70",
+    "project_name": "Project_70",
+    "location": "Urban",
+    "contractor_id": "1006",
+    "total_funds": "6595929",
+    "labour_cost": "2363389",
+    "material_cost": "2790863",
+    "other_cost": "354913"
+  },
+  {
+    "project_id": "71",
+    "project_name": "Project_71",
+    "location": "Semi-Urban",
+    "contractor_id": "1015",
+    "total_funds": "38998937",
+    "labour_cost": "19417158",
+    "material_cost": "23193197",
+    "other_cost": "2863414"
+  },
+  {
+    "project_id": "72",
+    "project_name": "Project_72",
+    "location": "Rural",
+    "contractor_id": "1025",
+    "total_funds": "1303328",
+    "labour_cost": "289519",
+    "material_cost": "434805",
+    "other_cost": "205138"
+  },
+  {
+    "project_id": "73",
+    "project_name": "Project_73",
+    "location": "Rural",
+    "contractor_id": "1047",
+    "total_funds": "21340174",
+    "labour_cost": "7813838",
+    "material_cost": "8949144",
+    "other_cost": "3176241"
+  },
+  {
+    "project_id": "74",
+    "project_name": "Project_74",
+    "location": "Rural",
+    "contractor_id": "1048",
+    "total_funds": "1543233",
+    "labour_cost": "757404",
+    "material_cost": "911805",
+    "other_cost": "83433"
+  },
+  {
+    "project_id": "75",
+    "project_name": "Project_75",
+    "location": "Rural",
+    "contractor_id": "1001",
+    "total_funds": "23745919",
+    "labour_cost": "8475615",
+    "material_cost": "3986836",
+    "other_cost": "1977935"
+  },
+  {
+    "project_id": "76",
+    "project_name": "Project_76",
+    "location": "Rural",
+    "contractor_id": "1000",
+    "total_funds": "10600349",
+    "labour_cost": "7418921",
+    "material_cost": "5778479",
+    "other_cost": "897438"
+  },
+  {
+    "project_id": "77",
+    "project_name": "Project_77",
+    "location": "Rural",
+    "contractor_id": "1047",
+    "total_funds": "1029525",
+    "labour_cost": "420792",
+    "material_cost": "388512",
+    "other_cost": "155235"
+  },
+  {
+    "project_id": "78",
+    "project_name": "Project_78",
+    "location": "Semi-Urban",
+    "contractor_id": "1011",
+    "total_funds": "49767247",
+    "labour_cost": "16739826",
+    "material_cost": "5244466",
+    "other_cost": "2635503"
+  },
+  {
+    "project_id": "79",
+    "project_name": "Project_79",
+    "location": "Semi-Urban",
+    "contractor_id": "1004",
+    "total_funds": "47705976",
+    "labour_cost": "18522676",
+    "material_cost": "23881276",
+    "other_cost": "3130289"
+  },
+  {
+    "project_id": "80",
+    "project_name": "Project_80",
+    "location": "Rural",
+    "contractor_id": "1036",
+    "total_funds": "17453831",
+    "labour_cost": "11790581",
+    "material_cost": "10102500",
+    "other_cost": "2966931"
+  },
+  {
+    "project_id": "81",
+    "project_name": "Project_81",
+    "location": "Semi-Urban",
+    "contractor_id": "1031",
+    "total_funds": "7974447",
+    "labour_cost": "3750760",
+    "material_cost": "3724296",
+    "other_cost": "612291"
+  },
+  {
+    "project_id": "82",
+    "project_name": "Project_82",
+    "location": "Urban",
+    "contractor_id": "1008",
+    "total_funds": "5101020",
+    "labour_cost": "1089750",
+    "material_cost": "2405048",
+    "other_cost": "754501"
+  },
+  {
+    "project_id": "83",
+    "project_name": "Project_83",
+    "location": "Rural",
+    "contractor_id": "1040",
+    "total_funds": "15626502",
+    "labour_cost": "4442441",
+    "material_cost": "6000478",
+    "other_cost": "1339619"
+  },
+  {
+    "project_id": "84",
+    "project_name": "Project_84",
+    "location": "Urban",
+    "contractor_id": "1034",
+    "total_funds": "4199391",
+    "labour_cost": "2037223",
+    "material_cost": "2229237",
+    "other_cost": "272608"
+  },
+  {
+    "project_id": "85",
+    "project_name": "Project_85",
+    "location": "Urban",
+    "contractor_id": "1018",
+    "total_funds": "32622302",
+    "labour_cost": "15237196",
+    "material_cost": "11617229",
+    "other_cost": "2821040"
+  },
+  {
+    "project_id": "86",
+    "project_name": "Project_86",
+    "location": "Rural",
+    "contractor_id": "1047",
+    "total_funds": "10574901",
+    "labour_cost": "3560537",
+    "material_cost": "4199333",
+    "other_cost": "1674430"
+  },
+  {
+    "project_id": "87",
+    "project_name": "Project_87",
+    "location": "Semi-Urban",
+    "contractor_id": "1015",
+    "total_funds": "48987260",
+    "labour_cost": "34039855",
+    "material_cost": "20948467",
+    "other_cost": "8737096"
+  },
+  {
+    "project_id": "88",
+    "project_name": "Project_88",
+    "location": "Urban",
+    "contractor_id": "1002",
+    "total_funds": "4112610",
+    "labour_cost": "1164750",
+    "material_cost": "1860064",
+    "other_cost": "717786"
+  },
+  {
+    "project_id": "89",
+    "project_name": "Project_89",
+    "location": "Rural",
+    "contractor_id": "1019",
+    "total_funds": "15692217",
+    "labour_cost": "4024054",
+    "material_cost": "5848848",
+    "other_cost": "1719514"
+  },
+  {
+    "project_id": "90",
+    "project_name": "Project_90",
+    "location": "Urban",
+    "contractor_id": "1023",
+    "total_funds": "10792658",
+    "labour_cost": "3659893",
+    "material_cost": "3609615",
+    "other_cost": "1621195"
+  },
+  {
+    "project_id": "91",
+    "project_name": "Project_91",
+    "location": "Urban",
+    "contractor_id": "1032",
+    "total_funds": "34198788",
+    "labour_cost": "10465022",
+    "material_cost": "16524376",
+    "other_cost": "2761471"
+  },
+  {
+    "project_id": "92",
+    "project_name": "Project_92",
+    "location": "Urban",
+    "contractor_id": "1023",
+    "total_funds": "46841205",
+    "labour_cost": "17569987",
+    "material_cost": "18108302",
+    "other_cost": "4401769"
+  },
+  {
+    "project_id": "93",
+    "project_name": "Project_93",
+    "location": "Urban",
+    "contractor_id": "1010",
+    "total_funds": "29266157",
+    "labour_cost": "6535729",
+    "material_cost": "13883029",
+    "other_cost": "5398153"
+  },
+  {
+    "project_id": "94",
+    "project_name": "Project_94",
+    "location": "Semi-Urban",
+    "contractor_id": "1048",
+    "total_funds": "2248014",
+    "labour_cost": "1106738",
+    "material_cost": "778507",
+    "other_cost": "116784"
+  },
+  {
+    "project_id": "95",
+    "project_name": "Project_95",
+    "location": "Urban",
+    "contractor_id": "1007",
+    "total_funds": "41211152",
+    "labour_cost": "20435094",
+    "material_cost": "5493553",
+    "other_cost": "2589143"
+  },
+  {
+    "project_id": "96",
+    "project_name": "Project_96",
+    "location": "Urban",
+    "contractor_id": "1035",
+    "total_funds": "46716125",
+    "labour_cost": "19127847",
+    "material_cost": "21478991",
+    "other_cost": "3792552"
+  },
+  {
+    "project_id": "97",
+    "project_name": "Project_97",
+    "location": "Urban",
+    "contractor_id": "1037",
+    "total_funds": "2788627",
+    "labour_cost": "1006217",
+    "material_cost": "879943",
+    "other_cost": "150529"
+  },
+  {
+    "project_id": "98",
+    "project_name": "Project_98",
+    "location": "Semi-Urban",
+    "contractor_id": "1039",
+    "total_funds": "15340260",
+    "labour_cost": "4492522",
+    "material_cost": "6151157",
+    "other_cost": "1184503"
+  },
+  {
+    "project_id": "99",
+    "project_name": "Project_99",
+    "location": "Urban",
+    "contractor_id": "1019",
+    "total_funds": "23795179",
+    "labour_cost": "10568355",
+    "material_cost": "8098080",
+    "other_cost": "3270795"
+  },
+  {
+    "project_id": "100",
+    "project_name": "Project_100",
+    "location": "Urban",
+    "contractor_id": "1034",
+    "total_funds": "7097519",
+    "labour_cost": "2877471",
+    "material_cost": "2264197",
+    "other_cost": "803536"
+  },
+  {
+    "project_id": "101",
+    "project_name": "Project_101",
+    "location": "Semi-Urban",
+    "contractor_id": "1047",
+    "total_funds": "18041337",
+    "labour_cost": "4488415",
+    "material_cost": "10770462",
+    "other_cost": "3317815"
+  },
+  {
+    "project_id": "102",
+    "project_name": "Project_102",
+    "location": "Semi-Urban",
+    "contractor_id": "1024",
+    "total_funds": "31599311",
+    "labour_cost": "14955263",
+    "material_cost": "12535641",
+    "other_cost": "5454563"
+  },
+  {
+    "project_id": "103",
+    "project_name": "Project_103",
+    "location": "Semi-Urban",
+    "contractor_id": "1034",
+    "total_funds": "43612788",
+    "labour_cost": "19484500",
+    "material_cost": "23680101",
+    "other_cost": "4416780"
+  },
+  {
+    "project_id": "104",
+    "project_name": "Project_104",
+    "location": "Urban",
+    "contractor_id": "1024",
+    "total_funds": "20779846",
+    "labour_cost": "10076977",
+    "material_cost": "7821371",
+    "other_cost": "1847609"
+  },
+  {
+    "project_id": "105",
+    "project_name": "Project_105",
+    "location": "Semi-Urban",
+    "contractor_id": "1028",
+    "total_funds": "11470723",
+    "labour_cost": "4791502",
+    "material_cost": "5786415",
+    "other_cost": "1226838"
+  },
+  {
+    "project_id": "106",
+    "project_name": "Project_106",
+    "location": "Semi-Urban",
+    "contractor_id": "1017",
+    "total_funds": "6198848",
+    "labour_cost": "2380509",
+    "material_cost": "3273415",
+    "other_cost": "858814"
+  },
+  {
+    "project_id": "107",
+    "project_name": "Project_107",
+    "location": "Urban",
+    "contractor_id": "1045",
+    "total_funds": "39793284",
+    "labour_cost": "12951635",
+    "material_cost": "19048711",
+    "other_cost": "3589734"
+  },
+  {
+    "project_id": "108",
+    "project_name": "Project_108",
+    "location": "Semi-Urban",
+    "contractor_id": "1017",
+    "total_funds": "34343222",
+    "labour_cost": "16478514",
+    "material_cost": "15161600",
+    "other_cost": "4932453"
+  },
+  {
+    "project_id": "109",
+    "project_name": "Project_109",
+    "location": "Urban",
+    "contractor_id": "1001",
+    "total_funds": "5584921",
+    "labour_cost": "2568053",
+    "material_cost": "2365505",
+    "other_cost": "622225"
+  },
+  {
+    "project_id": "110",
+    "project_name": "Project_110",
+    "location": "Rural",
+    "contractor_id": "1034",
+    "total_funds": "28310313",
+    "labour_cost": "6046109",
+    "material_cost": "11456064",
+    "other_cost": "3759809"
+  },
+  {
+    "project_id": "111",
+    "project_name": "Project_111",
+    "location": "Semi-Urban",
+    "contractor_id": "1015",
+    "total_funds": "43851876",
+    "labour_cost": "9117247",
+    "material_cost": "25384041",
+    "other_cost": "5061338"
+  },
+  {
+    "project_id": "112",
+    "project_name": "Project_112",
+    "location": "Rural",
+    "contractor_id": "1040",
+    "total_funds": "47287763",
+    "labour_cost": "14798185",
+    "material_cost": "25969769",
+    "other_cost": "4453082"
+  },
+  {
+    "project_id": "113",
+    "project_name": "Project_113",
+    "location": "Urban",
+    "contractor_id": "1035",
+    "total_funds": "4193305",
+    "labour_cost": "1858330",
+    "material_cost": "2471987",
+    "other_cost": "806238"
+  },
+  {
+    "project_id": "114",
+    "project_name": "Project_114",
+    "location": "Semi-Urban",
+    "contractor_id": "1032",
+    "total_funds": "13970137",
+    "labour_cost": "6931742",
+    "material_cost": "4711975",
+    "other_cost": "2298658"
+  },
+  {
+    "project_id": "115",
+    "project_name": "Project_115",
+    "location": "Urban",
+    "contractor_id": "1003",
+    "total_funds": "4966271",
+    "labour_cost": "1217357",
+    "material_cost": "2578787",
+    "other_cost": "352689"
+  },
+  {
+    "project_id": "116",
+    "project_name": "Project_116",
+    "location": "Rural",
+    "contractor_id": "1032",
+    "total_funds": "35407127",
+    "labour_cost": "13392363",
+    "material_cost": "20589320",
+    "other_cost": "6382849"
+  },
+  {
+    "project_id": "117",
+    "project_name": "Project_117",
+    "location": "Urban",
+    "contractor_id": "1013",
+    "total_funds": "10995300",
+    "labour_cost": "3455462",
+    "material_cost": "3896403",
+    "other_cost": "1353682"
+  },
+  {
+    "project_id": "118",
+    "project_name": "Project_118",
+    "location": "Semi-Urban",
+    "contractor_id": "1020",
+    "total_funds": "29209379",
+    "labour_cost": "14341054",
+    "material_cost": "9345508",
+    "other_cost": "5379866"
+  },
+  {
+    "project_id": "119",
+    "project_name": "Project_119",
+    "location": "Semi-Urban",
+    "contractor_id": "1047",
+    "total_funds": "28314927",
+    "labour_cost": "12816346",
+    "material_cost": "14789911",
+    "other_cost": "4812922"
+  },
+  {
+    "project_id": "120",
+    "project_name": "Project_120",
+    "location": "Rural",
+    "contractor_id": "1019",
+    "total_funds": "35154999",
+    "labour_cost": "15872433",
+    "material_cost": "16605180",
+    "other_cost": "4000006"
+  },
+  {
+    "project_id": "121",
+    "project_name": "Project_121",
+    "location": "Urban",
+    "contractor_id": "1007",
+    "total_funds": "27951727",
+    "labour_cost": "9520580",
+    "material_cost": "15444688",
+    "other_cost": "1491794"
+  },
+  {
+    "project_id": "122",
+    "project_name": "Project_122",
+    "location": "Semi-Urban",
+    "contractor_id": "1006",
+    "total_funds": "8206358",
+    "labour_cost": "2662518",
+    "material_cost": "841804",
+    "other_cost": "741047"
+  },
+  {
+    "project_id": "123",
+    "project_name": "Project_123",
+    "location": "Rural",
+    "contractor_id": "1002",
+    "total_funds": "29497889",
+    "labour_cost": "8319057",
+    "material_cost": "15886978",
+    "other_cost": "3871454"
+  },
+  {
+    "project_id": "124",
+    "project_name": "Project_124",
+    "location": "Semi-Urban",
+    "contractor_id": "1016",
+    "total_funds": "47256336",
+    "labour_cost": "10250497",
+    "material_cost": "17035351",
+    "other_cost": "6853195"
+  },
+  {
+    "project_id": "125",
+    "project_name": "Project_125",
+    "location": "Semi-Urban",
+    "contractor_id": "1032",
+    "total_funds": "34103547",
+    "labour_cost": "15667739",
+    "material_cost": "11905438",
+    "other_cost": "3024410"
+  },
+  {
+    "project_id": "126",
+    "project_name": "Project_126",
+    "location": "Urban",
+    "contractor_id": "1047",
+    "total_funds": "33359007",
+    "labour_cost": "14807072",
+    "material_cost": "11651625",
+    "other_cost": "2365267"
+  },
+  {
+    "project_id": "127",
+    "project_name": "Project_127",
+    "location": "Semi-Urban",
+    "contractor_id": "1011",
+    "total_funds": "49478079",
+    "labour_cost": "24734848",
+    "material_cost": "26934501",
+    "other_cost": "8670515"
+  },
+  {
+    "project_id": "128",
+    "project_name": "Project_128",
+    "location": "Urban",
+    "contractor_id": "1021",
+    "total_funds": "12226298",
+    "labour_cost": "6100813",
+    "material_cost": "6107759",
+    "other_cost": "2416654"
+  },
+  {
+    "project_id": "129",
+    "project_name": "Project_129",
+    "location": "Semi-Urban",
+    "contractor_id": "1021",
+    "total_funds": "17998963",
+    "labour_cost": "6598951",
+    "material_cost": "8224079",
+    "other_cost": "2319229"
+  },
+  {
+    "project_id": "130",
+    "project_name": "Project_130",
+    "location": "Rural",
+    "contractor_id": "1045",
+    "total_funds": "23234731",
+    "labour_cost": "10007110",
+    "material_cost": "9471618",
+    "other_cost": "1760074"
+  },
+  {
+    "project_id": "131",
+    "project_name": "Project_131",
+    "location": "Semi-Urban",
+    "contractor_id": "1029",
+    "total_funds": "47173570",
+    "labour_cost": "22805105",
+    "material_cost": "26566275",
+    "other_cost": "4285534"
+  },
+  {
+    "project_id": "132",
+    "project_name": "Project_132",
+    "location": "Urban",
+    "contractor_id": "1037",
+    "total_funds": "11938459",
+    "labour_cost": "5430735",
+    "material_cost": "4987094",
+    "other_cost": "629856"
+  },
+  {
+    "project_id": "133",
+    "project_name": "Project_133",
+    "location": "Urban",
+    "contractor_id": "1037",
+    "total_funds": "15533888",
+    "labour_cost": "4259460",
+    "material_cost": "8465655",
+    "other_cost": "2907086"
+  },
+  {
+    "project_id": "134",
+    "project_name": "Project_134",
+    "location": "Rural",
+    "contractor_id": "1044",
+    "total_funds": "22524096",
+    "labour_cost": "7549249",
+    "material_cost": "9724563",
+    "other_cost": "1524040"
+  },
+  {
+    "project_id": "135",
+    "project_name": "Project_135",
+    "location": "Semi-Urban",
+    "contractor_id": "1007",
+    "total_funds": "35458762",
+    "labour_cost": "8465702",
+    "material_cost": "14647423",
+    "other_cost": "4839322"
+  },
+  {
+    "project_id": "136",
+    "project_name": "Project_136",
+    "location": "Semi-Urban",
+    "contractor_id": "1026",
+    "total_funds": "17528708",
+    "labour_cost": "8522726",
+    "material_cost": "7691666",
+    "other_cost": "1597010"
+  },
+  {
+    "project_id": "137",
+    "project_name": "Project_137",
+    "location": "Rural",
+    "contractor_id": "1026",
+    "total_funds": "4535851",
+    "labour_cost": "1732025",
+    "material_cost": "1770856",
+    "other_cost": "603842"
+  },
+  {
+    "project_id": "138",
+    "project_name": "Project_138",
+    "location": "Semi-Urban",
+    "contractor_id": "1033",
+    "total_funds": "48185442",
+    "labour_cost": "12942264",
+    "material_cost": "25262799",
+    "other_cost": "7117619"
+  },
+  {
+    "project_id": "139",
+    "project_name": "Project_139",
+    "location": "Semi-Urban",
+    "contractor_id": "1020",
+    "total_funds": "34545504",
+    "labour_cost": "13870372",
+    "material_cost": "15573669",
+    "other_cost": "6026852"
+  },
+  {
+    "project_id": "140",
+    "project_name": "Project_140",
+    "location": "Urban",
+    "contractor_id": "1029",
+    "total_funds": "35141312",
+    "labour_cost": "13544813",
+    "material_cost": "12990471",
+    "other_cost": "2845152"
+  },
+  {
+    "project_id": "141",
+    "project_name": "Project_141",
+    "location": "Semi-Urban",
+    "contractor_id": "1032",
+    "total_funds": "47142343",
+    "labour_cost": "14493857",
+    "material_cost": "26865118",
+    "other_cost": "2434872"
+  },
+  {
+    "project_id": "142",
+    "project_name": "Project_142",
+    "location": "Semi-Urban",
+    "contractor_id": "1027",
+    "total_funds": "15787338",
+    "labour_cost": "3695299",
+    "material_cost": "6554387",
+    "other_cost": "1113525"
+  },
+  {
+    "project_id": "143",
+    "project_name": "Project_143",
+    "location": "Rural",
+    "contractor_id": "1046",
+    "total_funds": "36110155",
+    "labour_cost": "14497214",
+    "material_cost": "16721379",
+    "other_cost": "6680479"
+  },
+  {
+    "project_id": "144",
+    "project_name": "Project_144",
+    "location": "Rural",
+    "contractor_id": "1032",
+    "total_funds": "36303420",
+    "labour_cost": "12927368",
+    "material_cost": "20763437",
+    "other_cost": "6573950"
+  },
+  {
+    "project_id": "145",
+    "project_name": "Project_145",
+    "location": "Urban",
+    "contractor_id": "1004",
+    "total_funds": "29969068",
+    "labour_cost": "12937512",
+    "material_cost": "14603069",
+    "other_cost": "4184040"
+  },
+  {
+    "project_id": "146",
+    "project_name": "Project_146",
+    "location": "Semi-Urban",
+    "contractor_id": "1047",
+    "total_funds": "49738027",
+    "labour_cost": "17709177",
+    "material_cost": "16665691",
+    "other_cost": "6967179"
+  },
+  {
+    "project_id": "147",
+    "project_name": "Project_147",
+    "location": "Semi-Urban",
+    "contractor_id": "1018",
+    "total_funds": "30685054",
+    "labour_cost": "13981781",
+    "material_cost": "17857156",
+    "other_cost": "4595255"
+  },
+  {
+    "project_id": "148",
+    "project_name": "Project_148",
+    "location": "Semi-Urban",
+    "contractor_id": "1003",
+    "total_funds": "10202701",
+    "labour_cost": "6713679",
+    "material_cost": "4982105",
+    "other_cost": "778524"
+  },
+  {
+    "project_id": "149",
+    "project_name": "Project_149",
+    "location": "Urban",
+    "contractor_id": "1034",
+    "total_funds": "11653281",
+    "labour_cost": "4291686",
+    "material_cost": "4666809",
+    "other_cost": "2181048"
+  },
+  {
+    "project_id": "150",
+    "project_name": "Project_150",
+    "location": "Urban",
+    "contractor_id": "1048",
+    "total_funds": "33627676",
+    "labour_cost": "15569482",
+    "material_cost": "11493321",
+    "other_cost": "3793725"
+  },
+  {
+    "project_id": "151",
+    "project_name": "Project_151",
+    "location": "Rural",
+    "contractor_id": "1016",
+    "total_funds": "3476242",
+    "labour_cost": "1116029",
+    "material_cost": "1870939",
+    "other_cost": "373594"
+  },
+  {
+    "project_id": "152",
+    "project_name": "Project_152",
+    "location": "Urban",
+    "contractor_id": "1043",
+    "total_funds": "38634513",
+    "labour_cost": "9280186",
+    "material_cost": "18777216",
+    "other_cost": "4938945"
+  },
+  {
+    "project_id": "153",
+    "project_name": "Project_153",
+    "location": "Semi-Urban",
+    "contractor_id": "1027",
+    "total_funds": "48310594",
+    "labour_cost": "10079271",
+    "material_cost": "22224724",
+    "other_cost": "2755872"
+  },
+  {
+    "project_id": "154",
+    "project_name": "Project_154",
+    "location": "Semi-Urban",
+    "contractor_id": "1029",
+    "total_funds": "36703222",
+    "labour_cost": "15655435",
+    "material_cost": "20853587",
+    "other_cost": "2750631"
+  },
+  {
+    "project_id": "155",
+    "project_name": "Project_155",
+    "location": "Urban",
+    "contractor_id": "1028",
+    "total_funds": "37817456",
+    "labour_cost": "14601049",
+    "material_cost": "20292058",
+    "other_cost": "6077455"
+  },
+  {
+    "project_id": "156",
+    "project_name": "Project_156",
+    "location": "Semi-Urban",
+    "contractor_id": "1045",
+    "total_funds": "28312615",
+    "labour_cost": "11642824",
+    "material_cost": "9782078",
+    "other_cost": "1767267"
+  },
+  {
+    "project_id": "157",
+    "project_name": "Project_157",
+    "location": "Semi-Urban",
+    "contractor_id": "1005",
+    "total_funds": "45153148",
+    "labour_cost": "11915430",
+    "material_cost": "17768514",
+    "other_cost": "6342789"
+  },
+  {
+    "project_id": "158",
+    "project_name": "Project_158",
+    "location": "Urban",
+    "contractor_id": "1034",
+    "total_funds": "5333177",
+    "labour_cost": "1284823",
+    "material_cost": "1997524",
+    "other_cost": "462932"
+  },
+  {
+    "project_id": "159",
+    "project_name": "Project_159",
+    "location": "Urban",
+    "contractor_id": "1040",
+    "total_funds": "42327273",
+    "labour_cost": "8650145",
+    "material_cost": "22144947",
+    "other_cost": "4588036"
+  },
+  {
+    "project_id": "160",
+    "project_name": "Project_160",
+    "location": "Semi-Urban",
+    "contractor_id": "1036",
+    "total_funds": "33343353",
+    "labour_cost": "10175600",
+    "material_cost": "10338431",
+    "other_cost": "3111070"
+  },
+  {
+    "project_id": "161",
+    "project_name": "Project_161",
+    "location": "Semi-Urban",
+    "contractor_id": "1023",
+    "total_funds": "8954561",
+    "labour_cost": "3375648",
+    "material_cost": "4217301",
+    "other_cost": "925462"
+  },
+  {
+    "project_id": "162",
+    "project_name": "Project_162",
+    "location": "Semi-Urban",
+    "contractor_id": "1028",
+    "total_funds": "46432658",
+    "labour_cost": "14750411",
+    "material_cost": "24550692",
+    "other_cost": "7329714"
+  },
+  {
+    "project_id": "163",
+    "project_name": "Project_163",
+    "location": "Rural",
+    "contractor_id": "1048",
+    "total_funds": "3097480",
+    "labour_cost": "1846828",
+    "material_cost": "1743973",
+    "other_cost": "292923"
+  },
+  {
+    "project_id": "164",
+    "project_name": "Project_164",
+    "location": "Rural",
+    "contractor_id": "1045",
+    "total_funds": "38252003",
+    "labour_cost": "18026164",
+    "material_cost": "15401194",
+    "other_cost": "5162516"
+  },
+  {
+    "project_id": "165",
+    "project_name": "Project_165",
+    "location": "Rural",
+    "contractor_id": "1030",
+    "total_funds": "23651417",
+    "labour_cost": "7201303",
+    "material_cost": "12922594",
+    "other_cost": "2871460"
+  },
+  {
+    "project_id": "166",
+    "project_name": "Project_166",
+    "location": "Urban",
+    "contractor_id": "1034",
+    "total_funds": "40173332",
+    "labour_cost": "14229267",
+    "material_cost": "13385333",
+    "other_cost": "6007948"
+  },
+  {
+    "project_id": "167",
+    "project_name": "Project_167",
+    "location": "Rural",
+    "contractor_id": "1032",
+    "total_funds": "20199313",
+    "labour_cost": "8788638",
+    "material_cost": "11189120",
+    "other_cost": "3848463"
+  },
+  {
+    "project_id": "168",
+    "project_name": "Project_168",
+    "location": "Urban",
+    "contractor_id": "1020",
+    "total_funds": "17434380",
+    "labour_cost": "5560919",
+    "material_cost": "5897119",
+    "other_cost": "2787510"
+  },
+  {
+    "project_id": "169",
+    "project_name": "Project_169",
+    "location": "Urban",
+    "contractor_id": "1031",
+    "total_funds": "11117244",
+    "labour_cost": "4298215",
+    "material_cost": "4660195",
+    "other_cost": "914293"
+  },
+  {
+    "project_id": "170",
+    "project_name": "Project_170",
+    "location": "Rural",
+    "contractor_id": "1022",
+    "total_funds": "34586263",
+    "labour_cost": "15865034",
+    "material_cost": "18648519",
+    "other_cost": "1891089"
+  },
+  {
+    "project_id": "171",
+    "project_name": "Project_171",
+    "location": "Rural",
+    "contractor_id": "1032",
+    "total_funds": "3489475",
+    "labour_cost": "1691893",
+    "material_cost": "1203782",
+    "other_cost": "311748"
+  },
+  {
+    "project_id": "172",
+    "project_name": "Project_172",
+    "location": "Rural",
+    "contractor_id": "1002",
+    "total_funds": "28872244",
+    "labour_cost": "7048351",
+    "material_cost": "10647373",
+    "other_cost": "4020797"
+  },
+  {
+    "project_id": "173",
+    "project_name": "Project_173",
+    "location": "Semi-Urban",
+    "contractor_id": "1017",
+    "total_funds": "3869720",
+    "labour_cost": "1849634",
+    "material_cost": "1999390",
+    "other_cost": "223336"
+  },
+  {
+    "project_id": "174",
+    "project_name": "Project_174",
+    "location": "Rural",
+    "contractor_id": "1024",
+    "total_funds": "5211075",
+    "labour_cost": "1811551",
+    "material_cost": "2688971",
+    "other_cost": "648544"
+  },
+  {
+    "project_id": "175",
+    "project_name": "Project_175",
+    "location": "Semi-Urban",
+    "contractor_id": "1041",
+    "total_funds": "24399529",
+    "labour_cost": "6770218",
+    "material_cost": "12012968",
+    "other_cost": "3404379"
+  },
+  {
+    "project_id": "176",
+    "project_name": "Project_176",
+    "location": "Urban",
+    "contractor_id": "1030",
+    "total_funds": "7354500",
+    "labour_cost": "2483914",
+    "material_cost": "3737443",
+    "other_cost": "736454"
+  },
+  {
+    "project_id": "177",
+    "project_name": "Project_177",
+    "location": "Semi-Urban",
+    "contractor_id": "1002",
+    "total_funds": "3140328",
+    "labour_cost": "1551352",
+    "material_cost": "1453398",
+    "other_cost": "520153"
+  },
+  {
+    "project_id": "178",
+    "project_name": "Project_178",
+    "location": "Rural",
+    "contractor_id": "1039",
+    "total_funds": "26356919",
+    "labour_cost": "9166552",
+    "material_cost": "2969420",
+    "other_cost": "1739286"
+  },
+  {
+    "project_id": "179",
+    "project_name": "Project_179",
+    "location": "Urban",
+    "contractor_id": "1045",
+    "total_funds": "43276767",
+    "labour_cost": "12923545",
+    "material_cost": "17471211",
+    "other_cost": "2651596"
+  },
+  {
+    "project_id": "180",
+    "project_name": "Project_180",
+    "location": "Urban",
+    "contractor_id": "1023",
+    "total_funds": "26828752",
+    "labour_cost": "10463756",
+    "material_cost": "9510237",
+    "other_cost": "4271896"
+  },
+  {
+    "project_id": "181",
+    "project_name": "Project_181",
+    "location": "Urban",
+    "contractor_id": "1049",
+    "total_funds": "27848975",
+    "labour_cost": "7576137",
+    "material_cost": "15944517",
+    "other_cost": "3462287"
+  },
+  {
+    "project_id": "182",
+    "project_name": "Project_182",
+    "location": "Semi-Urban",
+    "contractor_id": "1031",
+    "total_funds": "12052291",
+    "labour_cost": "2684756",
+    "material_cost": "1717514",
+    "other_cost": "1847138"
+  },
+  {
+    "project_id": "183",
+    "project_name": "Project_183",
+    "location": "Rural",
+    "contractor_id": "1046",
+    "total_funds": "570640",
+    "labour_cost": "136191",
+    "material_cost": "239814",
+    "other_cost": "65751"
+  },
+  {
+    "project_id": "184",
+    "project_name": "Project_184",
+    "location": "Urban",
+    "contractor_id": "1021",
+    "total_funds": "46833926",
+    "labour_cost": "11165852",
+    "material_cost": "20541441",
+    "other_cost": "4072692"
+  },
+  {
+    "project_id": "185",
+    "project_name": "Project_185",
+    "location": "Urban",
+    "contractor_id": "1022",
+    "total_funds": "10889599",
+    "labour_cost": "2674167",
+    "material_cost": "6361540",
+    "other_cost": "1882434"
+  },
+  {
+    "project_id": "186",
+    "project_name": "Project_186",
+    "location": "Urban",
+    "contractor_id": "1001",
+    "total_funds": "33749942",
+    "labour_cost": "8155611",
+    "material_cost": "11677662",
+    "other_cost": "5734533"
+  },
+  {
+    "project_id": "187",
+    "project_name": "Project_187",
+    "location": "Semi-Urban",
+    "contractor_id": "1026",
+    "total_funds": "38649309",
+    "labour_cost": "15160671",
+    "material_cost": "18392006",
+    "other_cost": "5959896"
+  },
+  {
+    "project_id": "188",
+    "project_name": "Project_188",
+    "location": "Semi-Urban",
+    "contractor_id": "1041",
+    "total_funds": "18632747",
+    "labour_cost": "4743227",
+    "material_cost": "8417652",
+    "other_cost": "1692259"
+  },
+  {
+    "project_id": "189",
+    "project_name": "Project_189",
+    "location": "Rural",
+    "contractor_id": "1001",
+    "total_funds": "31075984",
+    "labour_cost": "9437782",
+    "material_cost": "15023257",
+    "other_cost": "4305099"
+  },
+  {
+    "project_id": "190",
+    "project_name": "Project_190",
+    "location": "Semi-Urban",
+    "contractor_id": "1025",
+    "total_funds": "34729942",
+    "labour_cost": "16289611",
+    "material_cost": "10607672",
+    "other_cost": "3616987"
+  },
+  {
+    "project_id": "191",
+    "project_name": "Project_191",
+    "location": "Urban",
+    "contractor_id": "1016",
+    "total_funds": "4241196",
+    "labour_cost": "1451288",
+    "material_cost": "2382013",
+    "other_cost": "270322"
+  },
+  {
+    "project_id": "192",
+    "project_name": "Project_192",
+    "location": "Rural",
+    "contractor_id": "1039",
+    "total_funds": "24267318",
+    "labour_cost": "9713414",
+    "material_cost": "14066198",
+    "other_cost": "4552476"
+  },
+  {
+    "project_id": "193",
+    "project_name": "Project_193",
+    "location": "Urban",
+    "contractor_id": "1032",
+    "total_funds": "20011512",
+    "labour_cost": "5036816",
+    "material_cost": "9396204",
+    "other_cost": "1411267"
+  },
+  {
+    "project_id": "194",
+    "project_name": "Project_194",
+    "location": "Urban",
+    "contractor_id": "1008",
+    "total_funds": "17083522",
+    "labour_cost": "4402196",
+    "material_cost": "8695431",
+    "other_cost": "3289186"
+  },
+  {
+    "project_id": "195",
+    "project_name": "Project_195",
+    "location": "Semi-Urban",
+    "contractor_id": "1042",
+    "total_funds": "40760456",
+    "labour_cost": "8651838",
+    "material_cost": "23508585",
+    "other_cost": "4764932"
+  },
+  {
+    "project_id": "196",
+    "project_name": "Project_196",
+    "location": "Rural",
+    "contractor_id": "1047",
+    "total_funds": "12220477",
+    "labour_cost": "3063435",
+    "material_cost": "6258981",
+    "other_cost": "950385"
+  },
+  {
+    "project_id": "197",
+    "project_name": "Project_197",
+    "location": "Semi-Urban",
+    "contractor_id": "1038",
+    "total_funds": "13717648",
+    "labour_cost": "3890010",
+    "material_cost": "4743037",
+    "other_cost": "1800923"
+  },
+  {
+    "project_id": "198",
+    "project_name": "Project_198",
+    "location": "Semi-Urban",
+    "contractor_id": "1028",
+    "total_funds": "23058781",
+    "labour_cost": "5836249",
+    "material_cost": "10904186",
+    "other_cost": "4172299"
+  },
+  {
+    "project_id": "199",
+    "project_name": "Project_199",
+    "location": "Rural",
+    "contractor_id": "1041",
+    "total_funds": "32925301",
+    "labour_cost": "7461227",
+    "material_cost": "15870472",
+    "other_cost": "5262573"
+  },
+  {
+    "project_id": "200",
+    "project_name": "Project_200",
+    "location": "Urban",
+    "contractor_id": "1025",
+    "total_funds": "3764908",
+    "labour_cost": "889236",
+    "material_cost": "1608516",
+    "other_cost": "643739 "
+  }
+]
