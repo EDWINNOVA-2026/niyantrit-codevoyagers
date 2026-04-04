@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 720" role="img" aria-labelledby="title desc">
+  <title id="title">Niyantrit Logo</title>
+  <desc id="desc">Niyantrit supporting people forward brand mark</desc>
+
+  <defs>
+    <linearGradient id="brandBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1f5da8" />
+      <stop offset="100%" stop-color="#2da7d7" />
+    </linearGradient>
+  </defs>
+
+  <g transform="translate(120 40)">
+    <path
+      d="M210 15c95 25 155 109 160 206 6 109-61 205-167 241-103 35-220-2-282-90-51-72-60-166-24-246 18-40 47-75 84-101"
+      fill="none"
+      stroke="url(#brandBlue)"
+      stroke-width="18"
+      stroke-linecap="round"
+    />
+
+    <path
+      d="M78 200c16-25 44-41 76-43 68-4 125 52 186 44 22-3 41-13 59-26-16 50-44 92-83 124-45 36-103 58-161 56-69-2-132-36-173-92 25-16 41-39 46-63 7 0 15 0 22 0 11 1 20 1 28 0z"
+      fill="none"
+      stroke="url(#brandBlue)"
+      stroke-width="14"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <g fill="url(#brandBlue)">
+      <circle cx="175" cy="72" r="16" />
+      <circle cx="124" cy="109" r="13" />
+      <circle cx="225" cy="108" r="13" />
+      <circle cx="278" cy="140" r="11" />
+      <circle cx="174" cy="145" r="12" />
+      <circle cx="90" cy="154" r="11" />
+    </g>
+
+    <g fill="none" stroke="url(#brandBlue)" stroke-width="9" stroke-linecap="round">
+      <path d="M176 91l-7 29" />
+      <path d="M126 122l36 24" />
+      <path d="M225 121l-36 25" />
+      <path d="M279 151l-42 9" />
+      <path d="M90 166l41 6" />
+      <path d="M173 160l0 28" />
+    </g>
+  </g>
+
+  <g fill="url(#brandBlue)" transform="translate(70 535)">
+    <text x="0" y="0" font-family="Montserrat, Poppins, Arial, sans-serif" font-size="82" font-weight="800" letter-spacing="3">
+      NIYANTRIT
+    </text>
+    <text x="2" y="56" font-family="Montserrat, Poppins, Arial, sans-serif" font-size="44" font-weight="600" letter-spacing="2">
+      SUPPORTING PEOPLE FORWARD
+    </text>
+  </g>
+</svg>
