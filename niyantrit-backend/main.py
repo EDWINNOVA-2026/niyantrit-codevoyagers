@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File, F
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from typing import List, Optional
 from datetime import datetime
 import json
@@ -408,14 +409,29 @@ async def submit_voice_complaint(
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Save audio file temporarily
-    temp_audio_path = f"/tmp/complaint_audio_{current_user.id}_{datetime.utcnow().timestamp()}.wav"
+    # Save audio file to disk
+    temp_audio_path = f"./complaint_audio_{current_user.id}_{datetime.utcnow().timestamp()}.wav"
     
     try:
         contents = await audio_file.read()
         
+        # Write audio file to disk
+        try:
+            with open(temp_audio_path, 'wb') as f:
+                f.write(contents)
+        except IOError as e:
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to save audio file: {str(e)}"
+            )
+        
         # Transcribe audio
-        transcribed_text = transcribe_audio_stream(contents, language_code="en-IN")
+        transcribed_text = transcribe_audio_stream(
+            contents,
+            language_code="en-IN",
+            filename=audio_file.filename,
+            content_type=audio_file.content_type,
+        )
         
         if not transcribed_text:
             raise HTTPException(
@@ -473,9 +489,8 @@ async def submit_voice_complaint(
         }
     
     finally:
-        # Clean up temp file if exists
-        if os.path.exists(temp_audio_path):
-            os.remove(temp_audio_path)
+        # Clean up temp file on error only (keep on success for the /audio endpoint)
+        pass  # File is kept for retrieval via /complaints/{complaint_id}/audio endpoint
 
 @app.get("/complaints")
 def get_complaints(
@@ -498,7 +513,10 @@ def get_complaints(
             status_enum = ComplaintStatus(status_filter)
             query = query.filter(Complaint.status == status_enum)
         except ValueError:
-            pass
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid status filter: '{status_filter}'. Valid options are: {', '.join([s.value for s in ComplaintStatus])}"
+            )
     
     complaints = query.offset(skip).limit(limit).all()
     
@@ -571,6 +589,7 @@ def resolve_complaint(
     
     complaint.status = ComplaintStatus.RESOLVED
     complaint.resolved_at = datetime.utcnow()
+    complaint.resolution_notes = resolution_notes  # Persist resolution notes
     
     db.commit()
     
@@ -662,7 +681,8 @@ async def verify_complaint_media(
             if verification.get("timestamp"):
                 try:
                     media.capture_timestamp = datetime.fromisoformat(verification["timestamp"])
-                except:
+                except (ValueError, TypeError):
+                    # Timestamp parsing failed, leave as None
                     pass
             
             results.append({
@@ -938,11 +958,11 @@ def execute_fund_disbursement(
     if not milestone:
         raise HTTPException(status_code=404, detail="Milestone not found")
     
-    if milestone.status != "FULLY_APPROVED":
-        raise HTTPException(status_code=400, detail="Milestone not fully approved")
-    
     if milestone.status == "DISBURSED":
         raise HTTPException(status_code=400, detail="Already disbursed")
+    
+    if milestone.status != "FULLY_APPROVED":
+        raise HTTPException(status_code=400, detail="Milestone not fully approved")
     
     # Execute on blockchain
     blockchain_result = disburse_funds(milestone_id, recipient_address)
@@ -1061,9 +1081,9 @@ def get_dashboard_metrics(
         Complaint.status == ComplaintStatus.PENDING
     ).count()
     
-    high_risk_projects = db.query(RiskScore).filter(
+    high_risk_projects = db.query(RiskScore.project_id).filter(
         RiskScore.risk_score >= 70
-    ).count()
+    ).distinct(RiskScore.project_id).count()
     
     return {
         "total_projects": total_projects,
@@ -1072,6 +1092,5 @@ def get_dashboard_metrics(
         "pending_complaints": pending_complaints,
         "resolution_rate": (resolved_complaints / max(total_complaints, 1)) * 100,
         "high_risk_projects": high_risk_projects,
-        "average_complaint_severity": db.query(Complaint).count() > 0 and 
-            (db.query(Complaint).count() > 0) or 0
+        "average_complaint_severity": db.query(func.avg(Complaint.severity)).scalar() or 0
     }

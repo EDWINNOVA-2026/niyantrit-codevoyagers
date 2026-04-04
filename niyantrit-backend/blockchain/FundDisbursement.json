@@ -281,8 +281,9 @@
       "name": "getEventLog",
       "outputs": [
         {
-          "stateMutability": "view",
-          "type": "function"
+          "internalType": "struct FundDisbursement.MilestoneEvent",
+          "name": "",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",
@@ -313,7 +314,7 @@
         {
           "indexed": false,
           "internalType": "string",
-          "name": "milestioneName",
+          "name": "milestoneName",
           "type": "string"
         },
         {

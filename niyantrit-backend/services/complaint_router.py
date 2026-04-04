@@ -38,6 +38,9 @@ def classify_complaint(complaint_text: str) -> Tuple[Optional[ComplaintCategory]
     
     try:
         # Define the tools for GPT to use
+        # Generate enum values dynamically from ComplaintCategory
+        category_values = [c.value for c in ComplaintCategory]
+        
         tools = [
             {
                 "type": "function",
@@ -49,15 +52,7 @@ def classify_complaint(complaint_text: str) -> Tuple[Optional[ComplaintCategory]
                         "properties": {
                             "category": {
                                 "type": "string",
-                                "enum": [
-                                    "Labor Violation",
-                                    "Fund Misuse",
-                                    "Safety Hazard",
-                                    "Quality Issue",
-                                    "Delay",
-                                    "Environmental",
-                                    "Other"
-                                ],
+                                "enum": category_values,
                                 "description": "The category this complaint falls into"
                             },
                             "confidence": {
@@ -119,12 +114,22 @@ def determine_routing(category: ComplaintCategory, location: str) -> dict:
     Determine which official should handle this complaint based on category and location.
     
     Args:
-        category: The complaint category
+        category: The complaint category (may be None for uncategorized complaints)
         location: The project location/jurisdiction
         
     Returns:
         Dict with routing info: {role, jurisdiction, priority}
     """
+    
+    # Handle None category safely
+    if category is None:
+        return {
+            "role": "Official",
+            "priority": 5,
+            "category": "UNKNOWN",
+            "target_department": "General Services",
+            "jurisdiction": location
+        }
     
     # Define category to role mapping
     category_role_mapping = {
@@ -228,17 +233,20 @@ Format it as a professional complaint that includes:
         print(f"Error in enhance_complaint_text: {e}")
         return raw_complaint
 
-def get_routing_recommendations(category: ComplaintCategory, location: str, 
-                               complaint_text: str) -> dict:
+def get_routing_recommendations(category: ComplaintCategory, location: str) -> dict:
     """
     Get full routing recommendations for a complaint.
+    
+    Args:
+        category: The complaint category
+        location: The project location/jurisdiction
     
     Returns dict with category, confidence, routing info, and priority level.
     """
     routing = determine_routing(category, location)
     
     return {
-        "category": category.value,
+        "category": category.value if category else "UNKNOWN",
         "routing": routing,
         "priority": routing["priority"],
         "department": routing["target_department"]

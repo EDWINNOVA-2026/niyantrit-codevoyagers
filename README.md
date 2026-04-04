@@ -45,7 +45,7 @@ Niyantrit is an enterprise-grade, AI-powered system for managing construction pr
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                  Frontend (Vue/React-ready)             │
+│                  Frontend (React + Tailwind)            │
 │  - Login/Register                                       │
 │  - Projects & Risk Scores                               │
 │  - Complaint Submission (Text & Voice)                  │
@@ -143,8 +143,9 @@ This will:
 
 ```bash
 cd niyantrit-frontend
-python -m http.server 3000
-# Visit http://localhost:3000/login.html
+npm install
+npm run dev -- --host 127.0.0.1 --port 3000
+# Visit http://localhost:3000/login
 ```
 
 ### Test Credentials
@@ -181,25 +182,24 @@ niyantrit-CodeVoyagers/
 │   ├── requirements.txt              # Python dependencies
 │   └── .env.example                  # Config template
 │
-├── niyantrit-frontend/                # Web UI
-│   ├── login.html                    # Auth page (300 lines)
-│   ├── app.html                      # Main app (300 lines)
-│   │
-│   ├── js/
-│   │   ├── api-client.js             # API wrapper (200 lines)
-│   │   └── app.js                    # UI logic (600 lines)
-│   │
-│   ├── css/
-│   │   └── style.css                 # Styling (800 lines)
-│   │
-│   └── pages/                        # Component stubs
+├── niyantrit-frontend/                # React + Tailwind web UI
+│   ├── index.html                     # Vite entry HTML
+│   ├── package.json                   # Frontend scripts + dependencies
+│   ├── tailwind.config.js             # Tailwind configuration
+│   ├── postcss.config.js              # PostCSS pipeline
+│   └── src/
+│       ├── main.jsx                   # React bootstrap
+│       ├── App.jsx                    # Router definitions
+│       ├── context/AuthContext.jsx    # Auth state management
+│       ├── lib/api.js                 # Backend API service client
+│       ├── components/                # Shared UI components
+│       └── pages/                     # Routed application screens
 │
-├── Documentation/
-│   ├── README.md                     # This file
-│   ├── PHASE_1_QUICKSTART.md         # Setup guide
-│   ├── PHASE_1_TESTING.md            # Testing guide
-│   ├── API_SETUP_GUIDE.md            # External API setup
-│   └── ARCHITECTURE.md               # (Coming Phase 2)
+├── README.md                         # Project overview (this file)
+├── PHASE_1_QUICKSTART.md             # Setup guide
+├── PHASE_1_TESTING.md                # Testing guide
+├── API_SETUP_GUIDE.md                # External API setup
+├── ARCHITECTURE.md                   # (Coming Phase 2)
 │
 ├── niyantrit_projects_dataset_200.json  # 200 test projects
 └── projects.py                         # CSV converter utility
@@ -358,7 +358,8 @@ uvicorn main:app --reload
 
 # Frontend (in new terminal)
 cd niyantrit-frontend
-python -m http.server 3000
+npm install
+npm run dev -- --host 127.0.0.1 --port 3000
 ```
 
 ### Docker (Production)
@@ -407,7 +408,7 @@ python test_apis.py  # See API_SETUP_GUIDE.md for details
 | Get Complaints | <100ms | Database query only |
 | Admin Metrics | <500ms | Aggregation queries |
 
-**Database**: SQLite suitable for 1000+ concurrent users in development. Upgrade to PostgreSQL for production.
+**Database**: SQLite is appropriate for development, testing, and moderate read-heavy workloads. For production with high-concurrency writes, upgrade to PostgreSQL or another client-server RDBMS.
 
 ---
 

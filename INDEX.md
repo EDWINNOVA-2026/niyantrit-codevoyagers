@@ -36,17 +36,16 @@ Jobs/
 
 ### Frontend (niyantrit-frontend/)
 ```
-✅ login.html                 - Authentication UI (300+ lines)
-✅ app.html                   - Main application shell (400+ lines)
+✅ index.html                 - Vite entry document
+✅ package.json               - Frontend scripts and dependencies
+✅ tailwind.config.js         - Tailwind design system config
 
-js/
-✅ api-client.js              - REST API wrapper with auth (200+ lines)
-✅ app.js                     - Full app logic & UI (600+ lines)
-
-css/
-✅ style.css                  - Responsive styling (800+ lines)
-
-pages/ & components/          - Prepared for future modular components
+src/
+✅ App.jsx                    - React Router route map
+✅ context/AuthContext.jsx    - Auth/session state management
+✅ lib/api.js                 - REST API wrapper with auth
+✅ components/                - Shared layout and UI primitives
+✅ pages/                     - Route-based application screens
 ```
 
 ### Documentation
@@ -198,12 +197,13 @@ uvicorn main:app --reload
 ```bash
 # In a new terminal
 cd niyantrit-frontend
-python -m http.server 3000
+npm install
+npm run dev -- --host 127.0.0.1 --port 3000
 ```
 
 ### Step 4: Access Application
 
-- **Frontend**: http://localhost:3000/login.html
+- **Frontend**: http://localhost:3000/login
 - **API Docs**: http://localhost:8000/docs
 - **Database**: niyantrit-backend/niyantrit.db
 
@@ -384,9 +384,9 @@ def get_new_endpoint(current_user: User = Depends(get_current_user)):
 - pydantic - Validation
 
 ### JavaScript (Frontend)
-- None! Pure vanilla JS
-- Fetch API for HTTP
-- LocalStorage for persistence
+- React 19 with React Router
+- Tailwind CSS utility-first styling
+- Fetch API + centralized API client
 
 ---
 
@@ -395,7 +395,7 @@ def get_new_endpoint(current_user: User = Depends(get_current_user)):
 ### Local Development
 ```bash
 Backend: uvicorn main:app --reload
-Frontend: python -m http.server 3000
+Frontend: npm run dev -- --host 127.0.0.1 --port 3000
 ```
 
 ### Production (Recommended)
@@ -404,7 +404,7 @@ Frontend: python -m http.server 3000
 - **Database**: PostgreSQL on managed database service
 - **Storage**: S3 or similar for file uploads
 
-See DEPLOYMENT.md (Phase 2) for detailed steps.
+See DEPLOYMENT.md (coming in Phase 2) for comprehensive production deployment steps. For Phase 1, use the setup guides in QUICK_REFERENCE.md or SETUP_GUIDE.md to get the system running locally.
 
 ---
 
@@ -451,10 +451,10 @@ Estimated timeline: 2 weeks
 - [services/complaint_router.py](niyantrit-backend/services/complaint_router.py) - NLP routing
 
 ### Frontend  
-- [login.html](niyantrit-frontend/login.html) - Auth UI
-- [app.html](niyantrit-frontend/app.html) - Main app
-- [js/app.js](niyantrit-frontend/js/app.js) - App logic
-- [css/style.css](niyantrit-frontend/css/style.css) - Styling
+- [src/pages/AuthPage.jsx](niyantrit-frontend/src/pages/AuthPage.jsx) - Auth UI route
+- [src/App.jsx](niyantrit-frontend/src/App.jsx) - Route definitions
+- [src/lib/api.js](niyantrit-frontend/src/lib/api.js) - API client
+- [src/components/AppShell.jsx](niyantrit-frontend/src/components/AppShell.jsx) - Main layout
 
 ### Documentation
 - [README.md](README.md) - Overview
@@ -474,10 +474,10 @@ Backend:
   ✅ .env.example configured
 
 Frontend:
-  ✅ login.html exists
-  ✅ app.html exists
-  ✅ js/ and css/ directories ready
-  ✅ API client configured
+   ✅ React routes configured
+   ✅ Tailwind styles compiling
+   ✅ API client configured
+   ✅ Vite dev server starts cleanly
 
 Documentation:
   ✅ README.md complete

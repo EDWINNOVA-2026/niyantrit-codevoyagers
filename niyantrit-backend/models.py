@@ -40,6 +40,13 @@ class MediaVerificationStatus(str, enum.Enum):
     SUSPICIOUS = "Suspicious"
     FLAGGED = "Flagged"
 
+class DisbursementStatus(str, enum.Enum):
+    PENDING = "Pending"
+    PARTIALLY_APPROVED = "Partially Approved"
+    FULLY_APPROVED = "Fully Approved"
+    DISBURSED = "Disbursed"
+    CANCELLED = "Cancelled"
+
 # User Table
 class User(Base):
     __tablename__ = "users"
@@ -122,6 +129,7 @@ class Complaint(Base):
     project = relationship("Project", back_populates="complaints")
     created_by = relationship("User", back_populates="complaints_created", foreign_keys=[created_by_id])
     routing = relationship("ComplaintRouting", back_populates="complaint")
+    media = relationship("Media", back_populates="complaint")
 
 # Complaint Routing & Assignment Table
 class ComplaintRouting(Base):
@@ -197,6 +205,7 @@ class Media(Base):
     # Relationships
     project = relationship("Project", back_populates="media")
     uploaded_by = relationship("User", back_populates="media_uploaded")
+    complaint = relationship("Complaint", back_populates="media")
 
 
 # Fund Disbursement Tracking Table
@@ -213,7 +222,7 @@ class FundDisbursement(Base):
     # Approval tracking
     approval_threshold = Column(Integer, default=1)
     approval_count = Column(Integer, default=0)
-    status = Column(String, default="PENDING")  # PENDING, PARTIALLY_APPROVED, FULLY_APPROVED, DISBURSED, CANCELLED
+    status = Column(SQLEnum(DisbursementStatus), default=DisbursementStatus.PENDING)
     
     # Blockchain integration
     blockchain_tx_hash = Column(String, nullable=True)  # Ethereum transaction hash

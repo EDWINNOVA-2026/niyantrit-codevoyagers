@@ -1,30 +1,108 @@
 """
 Speech-to-Text Service
-Multiple backends supported:
-1. OpenAI Whisper (recommended - free, offline-capable)
-2. SpeechRecognition + pocketsphinx (free, offline)
-3. Google Cloud Speech-to-Text (optional, requires credentials)
+
+Backends supported (auto mode priority):
+1. Faster-Whisper (local/offline, preferred)
+2. OpenAI Whisper API (optional cloud fallback)
+3. SpeechRecognition + pocketsphinx (optional offline fallback)
+4. Google Cloud Speech-to-Text (optional, only if credentials are configured)
 """
+
 import os
+import tempfile
 from typing import Optional
+
 from dotenv import load_dotenv
 
-# Try to import Google Cloud (optional)
-try:
-    from google.cloud import speech_v1
-    GOOGLE_CLOUD_AVAILABLE = True
-except ImportError:
-    GOOGLE_CLOUD_AVAILABLE = False
+load_dotenv()
 
-# Try to import OpenAI Whisper (recommended fallback)
+# On Windows, Hugging Face cache symlink warnings are common when Developer Mode
+# is disabled. Caching still works, so silence this warning by default.
+if os.name == "nt":
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+
+# Keep Hugging Face hub logs quiet unless explicitly overridden.
+os.environ.setdefault("HF_HUB_VERBOSITY", "error")
+
+# Try to import Faster-Whisper (local preferred backend)
+try:
+    from faster_whisper import WhisperModel
+
+    FASTER_WHISPER_AVAILABLE = True
+except ImportError:
+    FASTER_WHISPER_AVAILABLE = False
+    WhisperModel = None
+
+# Try to import OpenAI Whisper API client (optional)
 try:
     from openai import OpenAI
+
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
     OpenAI = None
 
-# Initialize OpenAI client if available
+# Try to import SpeechRecognition (optional offline backend)
+try:
+    import speech_recognition as sr
+
+    SPEECH_RECOGNITION_AVAILABLE = True
+except ImportError:
+    SPEECH_RECOGNITION_AVAILABLE = False
+
+# Try to import Google Cloud (optional)
+try:
+    from google.cloud import speech_v1
+
+    GOOGLE_CLOUD_AVAILABLE = True
+except ImportError:
+    GOOGLE_CLOUD_AVAILABLE = False
+
+
+def _language_for_whisper(language_code: str) -> str:
+    """Convert BCP-47 code (e.g., en-IN) to Whisper language token (en)."""
+    if not language_code:
+        return "en"
+    return language_code.split("-")[0].lower()
+
+
+def _guess_audio_extension(filename: Optional[str], content_type: Optional[str]) -> str:
+    """Guess a useful extension so decoders can infer container/codec."""
+    if filename:
+        _, ext = os.path.splitext(filename)
+        ext = ext.lower()
+        if ext in {".wav", ".webm", ".ogg", ".mp3", ".m4a", ".flac", ".aac"}:
+            return ext
+
+    if content_type:
+        mime_map = {
+            "audio/wav": ".wav",
+            "audio/x-wav": ".wav",
+            "audio/webm": ".webm",
+            "audio/ogg": ".ogg",
+            "audio/mpeg": ".mp3",
+            "audio/mp4": ".m4a",
+            "audio/flac": ".flac",
+            "audio/aac": ".aac",
+        }
+        return mime_map.get(content_type.lower(), ".wav")
+
+    return ".wav"
+
+
+def _write_temp_audio_file(
+    audio_bytes: bytes, filename: Optional[str] = None, content_type: Optional[str] = None
+) -> str:
+    """Persist uploaded audio bytes to a temporary file and return its path."""
+    suffix = _guess_audio_extension(filename, content_type)
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    tmp.write(audio_bytes)
+    tmp.flush()
+    tmp.close()
+    return tmp.name
+
+
+# Initialize OpenAI client (optional)
 openai_client = None
 if OPENAI_AVAILABLE and os.getenv("OPENAI_API_KEY"):
     try:
@@ -32,310 +110,234 @@ if OPENAI_AVAILABLE and os.getenv("OPENAI_API_KEY"):
     except Exception:
         openai_client = None
 
-# Try to import SpeechRecognition (free offline alternative)
-try:
-    import speech_recognition as sr
-    SPEECH_RECOGNITION_AVAILABLE = True
-except ImportError:
-    SPEECH_RECOGNITION_AVAILABLE = False
 
-load_dotenv()
-
-# Initialize Google Cloud Speech client if available
+# Initialize Google client only when credentials are explicitly configured.
 SPEECH_SERVICE_AVAILABLE = False
-if GOOGLE_CLOUD_AVAILABLE:
+google_client = None
+google_credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+if GOOGLE_CLOUD_AVAILABLE and google_credentials_path and os.path.exists(google_credentials_path):
     try:
-        client = speech_v1.SpeechClient()
+        google_client = speech_v1.SpeechClient()
         SPEECH_SERVICE_AVAILABLE = True
-    except Exception as e:
-        print(f"Warning: Google Cloud Speech-to-Text not available: {e}")
+    except Exception as exc:
+        print(f"Warning: Google Cloud Speech-to-Text initialization failed: {exc}")
 
-# ======================== ALTERNATIVE BACKENDS ========================
+
+# Lazily initialize Faster-Whisper model to avoid startup cost.
+_faster_whisper_model = None
+
+
+def _get_faster_whisper_model():
+    """Load Faster-Whisper model lazily on first use."""
+    global _faster_whisper_model
+
+    if not FASTER_WHISPER_AVAILABLE:
+        return None
+
+    if _faster_whisper_model is None:
+        model_name = os.getenv("FASTER_WHISPER_MODEL", "base")
+        device = os.getenv("FASTER_WHISPER_DEVICE", "cpu")
+        compute_type = os.getenv("FASTER_WHISPER_COMPUTE_TYPE", "int8")
+
+        try:
+            _faster_whisper_model = WhisperModel(
+                model_name,
+                device=device,
+                compute_type=compute_type,
+            )
+            print(f"Faster-Whisper model loaded: {model_name} ({device}, {compute_type})")
+        except Exception as exc:
+            print(f"Faster-Whisper model initialization failed: {exc}")
+            _faster_whisper_model = None
+
+    return _faster_whisper_model
+
+
+def transcribe_audio_faster_whisper(audio_file_path: str, language_code: str = "en-IN") -> Optional[str]:
+    """Transcribe audio with local Faster-Whisper model."""
+    model = _get_faster_whisper_model()
+    if not model:
+        return None
+
+    try:
+        segments, _ = model.transcribe(
+            audio_file_path,
+            language=_language_for_whisper(language_code),
+            vad_filter=True,
+            beam_size=5,
+        )
+
+        text_parts = [segment.text.strip() for segment in segments if segment.text and segment.text.strip()]
+        text = " ".join(text_parts).strip()
+        return text or None
+    except Exception as exc:
+        print(f"Faster-Whisper transcription failed: {exc}")
+        return None
+
 
 def transcribe_audio_whisper(audio_file_path: str) -> Optional[str]:
-    """
-    Transcribe using OpenAI Whisper (free, offline-capable).
-    Recommended alternative when Google Cloud is unavailable.
-    
-    Args:
-        audio_file_path: Path to audio file
-        
-    Returns:
-        Transcribed text or None if transcription fails
-    """
+    """Transcribe audio with OpenAI Whisper API."""
     if not openai_client:
         return None
-    
+
     try:
         with open(audio_file_path, "rb") as audio_file:
             transcript = openai_client.audio.transcriptions.create(
                 model="whisper-1",
-                file=audio_file
+                file=audio_file,
             )
-            return transcript.text
-    except Exception as e:
-        print(f"Error with Whisper transcription: {e}")
+        return transcript.text
+    except Exception as exc:
+        print(f"OpenAI Whisper transcription failed: {exc}")
         return None
+
 
 def transcribe_audio_speech_recognition(audio_file_path: str) -> Optional[str]:
-    """
-    Transcribe using SpeechRecognition library (free, offline, no API key needed).
-    
-    Install: pip install SpeechRecognition pocketsphinx
-    
-    Args:
-        audio_file_path: Path to audio file (WAV, AIFF, FLAC, OGG)
-        
-    Returns:
-        Transcribed text or None if transcription fails
-    """
+    """Transcribe audio with SpeechRecognition + pocketsphinx."""
     if not SPEECH_RECOGNITION_AVAILABLE:
         return None
-    
+
+    _, ext = os.path.splitext(audio_file_path.lower())
+    if ext not in {".wav", ".flac", ".aiff", ".aif"}:
+        return None
+
     try:
         recognizer = sr.Recognizer()
-        
-        # Load audio file based on extension
-        file_ext = os.path.splitext(audio_file_path)[1].lower()
-        
-        if file_ext == ".wav":
-            with sr.AudioFile(audio_file_path) as source:
-                audio = recognizer.record(source)
-        elif file_ext == ".flac":
-            with sr.AudioFile(audio_file_path) as source:
-                audio = recognizer.record(source)
-        else:
-            print(f"Unsupported format: {file_ext}. Supported: .wav, .flac, .aiff, .ogg")
-            return None
-        
-        # Use pocketsphinx for offline recognition (no internet needed)
-        text = recognizer.recognize_sphinx(audio)
-        return text
-        
-    except Exception as e:
-        print(f"Error with SpeechRecognition transcription: {e}")
+        with sr.AudioFile(audio_file_path) as source:
+            audio = recognizer.record(source)
+        return recognizer.recognize_sphinx(audio)
+    except Exception as exc:
+        print(f"SpeechRecognition transcription failed: {exc}")
         return None
 
-# ======================== MAIN TRANSCRIPTION FUNCTION ========================
-
-def transcribe_audio(audio_file_path: str, language_code: str = "en-IN", use_backend: str = "auto") -> Optional[str]:
-    """
-    Transcribe audio file to text using best available backend.
-    
-    Backends (in order of preference when use_backend="auto"):
-    1. Google Cloud Speech-to-Text (requires GOOGLE_APPLICATION_CREDENTIALS)
-    2. OpenAI Whisper (requires OPENAI_API_KEY)
-    3. SpeechRecognition with pocketsphinx (free, offline, no API key needed)
-    
-    Args:
-        audio_file_path: Path to audio file
-        language_code: BCP-47 language code (only used for Google Cloud)
-        use_backend: Which backend to use ("auto", "google", "whisper", "speech_recognition")
-        
-    Returns:
-        Transcribed text or None if transcription fails
-    """
-    
-    # Try backends in order
-    backends = []
-    
-    if use_backend == "auto":
-        # Priority order
-        if SPEECH_SERVICE_AVAILABLE:
-            backends.append("google")
-        if openai_client:
-            backends.append("whisper")
-        if SPEECH_RECOGNITION_AVAILABLE:
-            backends.append("speech_recognition")
-    else:
-        backends.append(use_backend)
-    
-    if not backends:
-        print("ERROR: No speech-to-text backend available!")
-        print("Install one of:")
-        print("  1. google-cloud-speech (Google Cloud)")
-        print("  2. openai (for Whisper)")
-        print("  3. SpeechRecognition pocketsphinx (pip install SpeechRecognition pocketsphinx)")
-        return None
-    
-    # Try each backend
-    for backend in backends:
-        try:
-            if backend == "google" and SPEECH_SERVICE_AVAILABLE:
-                result = _transcribe_google_cloud(audio_file_path, language_code)
-            elif backend == "whisper" and openai_client:
-                result = transcribe_audio_whisper(audio_file_path)
-            elif backend == "speech_recognition" and SPEECH_RECOGNITION_AVAILABLE:
-                result = transcribe_audio_speech_recognition(audio_file_path)
-            else:
-                continue
-            
-            if result:
-                print(f"Successfully transcribed using {backend}")
-                return result
-        except Exception as e:
-            print(f"Backend '{backend}' failed: {e}")
-            continue
-    
-    print("All speech-to-text backends failed")
-    return None
 
 def _transcribe_google_cloud(audio_file_path: str, language_code: str = "en-IN") -> Optional[str]:
-    """
-    Internal: Transcribe using Google Cloud Speech-to-Text.
-    """
-    if not SPEECH_SERVICE_AVAILABLE:
+    """Internal helper: transcribe with Google Cloud Speech-to-Text."""
+    if not SPEECH_SERVICE_AVAILABLE or not google_client:
         return None
-    
+
     try:
-        # Read audio file
         with open(audio_file_path, "rb") as audio_file:
             content = audio_file.read()
-        
-        # Determine audio encoding based on file extension
-        file_ext = os.path.splitext(audio_file_path)[1].lower()
-        
+
+        ext = os.path.splitext(audio_file_path)[1].lower()
         encoding_map = {
             ".wav": speech_v1.RecognitionConfig.AudioEncoding.LINEAR16,
             ".mp3": speech_v1.RecognitionConfig.AudioEncoding.MP3,
             ".flac": speech_v1.RecognitionConfig.AudioEncoding.FLAC,
             ".ogg": speech_v1.RecognitionConfig.AudioEncoding.OGG_OPUS,
         }
-        
-        encoding = encoding_map.get(file_ext, speech_v1.RecognitionConfig.AudioEncoding.LINEAR16)
-        
-        # Configure audio
+
         audio = speech_v1.RecognitionAudio(content=content)
-        
         config = speech_v1.RecognitionConfig(
-            encoding=encoding,
+            encoding=encoding_map.get(ext, speech_v1.RecognitionConfig.AudioEncoding.LINEAR16),
             language_code=language_code,
             enable_automatic_punctuation=True,
-            model="latest_long",  # Use latest long-form model for better accuracy
-            use_enhanced=True,  # Use enhanced model
         )
-        
-        # Perform transcription
-        operation = client.long_running_recognize(config=config, audio=audio)
-        print(f"Waiting for transcription operation to complete...")
-        
-        response = operation.result(timeout=300)
-        
-        # Extract transcribed text
-        transcribed_text = ""
+        response = google_client.recognize(config=config, audio=audio)
+
+        text_parts = []
         for result in response.results:
             if result.alternatives:
-                transcribed_text += result.alternatives[0].transcript + " "
-        
-        return transcribed_text.strip()
-    
-    except FileNotFoundError:
-        print(f"Audio file not found: {audio_file_path}")
-        return None
-    except Exception as e:
-        print(f"Error during transcription: {e}")
+                text_parts.append(result.alternatives[0].transcript)
+
+        text = " ".join(text_parts).strip()
+        return text or None
+    except Exception as exc:
+        print(f"Google Cloud transcription failed: {exc}")
         return None
 
-def transcribe_audio_stream(audio_bytes: bytes, language_code: str = "en-IN", use_backend: str = "auto") -> Optional[str]:
-    """
-    Transcribe audio from bytes (useful for streaming/uploaded files).
-    Tries backends in order: Google Cloud -> Whisper -> SpeechRecognition
-    
-    Args:
-        audio_bytes: Audio data as bytes
-        language_code: BCP-47 language code (only for Google Cloud)
-        use_backend: Which backend to use ("auto", "google", "whisper", "speech_recognition")
-        
-    Returns:
-        Transcribed text or None if transcription fails
-    """
-    
-    # Try backends in order
+
+def _auto_backends() -> list[str]:
+    """Return enabled backends in preferred auto order."""
     backends = []
-    
-    if use_backend == "auto":
-        if SPEECH_SERVICE_AVAILABLE:
-            backends.append("google")
-        if openai_client:
-            backends.append("whisper")
-    else:
-        backends.append(use_backend)
-    
-    if not backends:
-        print("No speech-to-text backend available for streaming")
-        return None
-    
-    # Try Google Cloud
-    if "google" in backends and SPEECH_SERVICE_AVAILABLE:
-        try:
-            audio = speech_v1.RecognitionAudio(content=audio_bytes)
-            config = speech_v1.RecognitionConfig(
-                encoding=speech_v1.RecognitionConfig.AudioEncoding.LINEAR16,
-                language_code=language_code,
-                enable_automatic_punctuation=True,
-            )
-            response = client.recognize(config=config, audio=audio)
-            transcribed_text = ""
-            for result in response.results:
-                if result.alternatives:
-                    transcribed_text += result.alternatives[0].transcript + " "
-            if transcribed_text:
-                return transcribed_text.strip()
-        except Exception as e:
-            print(f"Google Cloud backend failed: {e}")
-    
-    # Try Whisper as fallback
-    if "whisper" in backends and openai_client:
-        try:
-            from io import BytesIO
-            file_obj = BytesIO(audio_bytes)
-            file_obj.name = "audio.wav"  # Give it a recognizable name
-            transcript = openai_client.audio.transcriptions.create(
-                model="whisper-1",
-                file=file_obj
-            )
-            return transcript.text
-        except Exception as e:
-            print(f"Whisper backend failed: {e}")
-    
-    print("All streaming backends failed")
+    if FASTER_WHISPER_AVAILABLE:
+        backends.append("faster_whisper")
+    if openai_client:
+        backends.append("whisper")
+    if SPEECH_RECOGNITION_AVAILABLE:
+        backends.append("speech_recognition")
+    if SPEECH_SERVICE_AVAILABLE:
+        backends.append("google")
+    return backends
+
+
+def _transcribe_with_backend(backend: str, audio_file_path: str, language_code: str) -> Optional[str]:
+    """Dispatch transcription to a specific backend."""
+    if backend == "faster_whisper":
+        return transcribe_audio_faster_whisper(audio_file_path, language_code)
+    if backend == "whisper":
+        return transcribe_audio_whisper(audio_file_path)
+    if backend == "speech_recognition":
+        return transcribe_audio_speech_recognition(audio_file_path)
+    if backend == "google":
+        return _transcribe_google_cloud(audio_file_path, language_code)
     return None
 
-def get_confidence_score(audio_file_path: str, language_code: str = "en-IN") -> Optional[float]:
-    """
-    Get confidence score of transcription (0-1).
-    
-    Args:
-        audio_file_path: Path to audio file
-        language_code: BCP-47 language code
-        
-    Returns:
-        Confidence score 0-1 or None if transcription fails
-    """
-    
-    if not SPEECH_SERVICE_AVAILABLE:
+
+def transcribe_audio(audio_file_path: str, language_code: str = "en-IN", use_backend: str = "auto") -> Optional[str]:
+    """Transcribe an audio file with the best available backend."""
+    backends = _auto_backends() if use_backend == "auto" else [use_backend]
+
+    if not backends:
+        print("No speech-to-text backend available")
+        print("Install/configure one of:")
+        print("  1. faster-whisper (local, recommended)")
+        print("  2. openai + OPENAI_API_KEY")
+        print("  3. SpeechRecognition + pocketsphinx")
+        print("  4. google-cloud-speech + GOOGLE_APPLICATION_CREDENTIALS")
         return None
-    
+
+    for backend in backends:
+        result = _transcribe_with_backend(backend, audio_file_path, language_code)
+        if result:
+            print(f"Successfully transcribed using {backend}")
+            return result
+
+    print("All speech-to-text backends failed")
+    return None
+
+
+def transcribe_audio_stream(
+    audio_bytes: bytes,
+    language_code: str = "en-IN",
+    use_backend: str = "auto",
+    filename: Optional[str] = None,
+    content_type: Optional[str] = None,
+) -> Optional[str]:
+    """Transcribe uploaded audio bytes using local-first fallback order."""
+    if not audio_bytes:
+        return None
+
+    temp_audio_path = _write_temp_audio_file(audio_bytes, filename=filename, content_type=content_type)
+    try:
+        return transcribe_audio(temp_audio_path, language_code=language_code, use_backend=use_backend)
+    finally:
+        try:
+            os.remove(temp_audio_path)
+        except OSError:
+            pass
+
+
+def get_confidence_score(audio_file_path: str, language_code: str = "en-IN") -> Optional[float]:
+    """Get confidence score when Google Cloud backend is configured."""
+    if not SPEECH_SERVICE_AVAILABLE or not google_client:
+        return None
+
     try:
         with open(audio_file_path, "rb") as audio_file:
             content = audio_file.read()
-        
+
         audio = speech_v1.RecognitionAudio(content=content)
-        
         config = speech_v1.RecognitionConfig(
             encoding=speech_v1.RecognitionConfig.AudioEncoding.LINEAR16,
             language_code=language_code,
         )
-        
-        response = client.recognize(config=config, audio=audio)
-        
-        if response.results:
-            first_result = response.results[0]
-            if first_result.alternatives:
-                return first_result.alternatives[0].confidence
-        
+
+        response = google_client.recognize(config=config, audio=audio)
+        if response.results and response.results[0].alternatives:
+            return response.results[0].alternatives[0].confidence
         return None
-    
-    except Exception as e:
-        print(f"Error getting confidence score: {e}")
+    except Exception as exc:
+        print(f"Error getting confidence score: {exc}")
         return None

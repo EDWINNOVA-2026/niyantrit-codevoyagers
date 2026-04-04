@@ -190,8 +190,24 @@ def create_sample_complaints(db: Session, citizen_user: User):
         }
     ]
 
+    # Collect sample descriptions to check for duplicates
+    sample_descriptions = {complaint["description"] for complaint in sample_complaints}
+    
+    # Find existing sample complaints to avoid duplicates
+    existing_sample_complaints = db.query(Complaint).filter(
+        Complaint.description.in_(sample_descriptions),
+        Complaint.created_by_id == citizen_user.id
+    ).all()
+    
+    existing_descriptions = {complaint.description for complaint in existing_sample_complaints}
+    
     added_count = 0
     for idx, (project, complaint_data) in enumerate(zip(projects, sample_complaints)):
+        # Skip if complaint already exists
+        if complaint_data["description"] in existing_descriptions:
+            print(f"⏭️  Sample complaint already exists: {complaint_data['description'][:50]}...")
+            continue
+            
         new_complaint = Complaint(
             project_id=project.id,
             description=complaint_data["description"],
@@ -207,7 +223,10 @@ def create_sample_complaints(db: Session, citizen_user: User):
         added_count += 1
 
     db.commit()
-    print(f"✅ Created {added_count} sample complaints")
+    if added_count > 0:
+        print(f"✅ Created {added_count} sample complaints")
+    else:
+        print("ℹ️  All sample complaints already exist")
 
 def main():
     """Main seeding function."""
@@ -223,7 +242,9 @@ def main():
         # Step 1: Create test users
         print("📝 Step 1: Creating test users...")
         users = create_test_users(db)
-        citizen_user = next(u for u in users if u.role == UserRole.CITIZEN)
+        citizen_user = next((u for u in users if u.role == UserRole.CITIZEN), None)
+        if citizen_user is None:
+            raise ValueError("No citizen user found after creation. Please check create_test_users()")
         print()
 
         # Step 2: Seed projects

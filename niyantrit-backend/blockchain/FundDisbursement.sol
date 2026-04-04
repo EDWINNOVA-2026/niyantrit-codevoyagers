@@ -59,7 +59,7 @@ contract FundDisbursement {
     struct MilestoneEvent {
         uint256 milestoneId;
         string eventType;
-        address indexed actor;
+        address actor;
         uint256 timestamp;
         string description;
     }
@@ -70,7 +70,7 @@ contract FundDisbursement {
     
     event MilestoneCreated(
         uint256 indexed milestoneId,
-        string milestone Name,
+        string milestoneName,
         string projectId,
         uint256 fundAmount,
         uint256 approvalThreshold,
@@ -186,6 +186,7 @@ contract FundDisbursement {
      */
     function transferOwnership(address _newOwner) external onlyOwner {
         require(_newOwner != address(0), "Invalid address");
+        isAdmin[msg.sender] = false;  // Revoke admin from previous owner
         owner = _newOwner;
         isAdmin[_newOwner] = true;
     }
@@ -304,8 +305,9 @@ contract FundDisbursement {
         
         require(_recipient != address(0), "Invalid recipient address");
         require(m.status == MilestoneStatus.FULLY_APPROVED, "Milestone not fully approved");
+        require(address(this).balance >= m.fundAmount, "Insufficient contract balance");
         
-        // Mark as disbursed
+        // Mark as disbursed BEFORE transfer (Checks-Effects-Interactions pattern)
         m.isDisbursed = true;
         m.status = MilestoneStatus.DISBURSED;
         m.disburseDate = block.timestamp;
@@ -316,6 +318,10 @@ contract FundDisbursement {
             "DISBURSED",
             string(abi.encodePacked("Funds disbursed to ", _addressToString(_recipient)))
         );
+        
+        // Transfer ETH to recipient
+        (bool sent, ) = _recipient.call{value: m.fundAmount}("");
+        require(sent, "Failed to send Ether");
         
         emit FundsDisbursed(_milestoneId, _recipient, m.fundAmount, block.timestamp);
     }
@@ -527,9 +533,30 @@ contract FundDisbursement {
     
     // ============================================================================
     // FALLBACK & RECEIVE
+    /**
+     * @dev Withdraw funds from contract (accessible only to owner)
+     * @param _to Address to receive withdrawn funds
+     * @param _amount Amount to withdraw in wei
+     */
+    function withdrawFunds(address payable _to, uint256 _amount) external onlyOwner {
+        require(_to != address(0), "Invalid withdrawal address");
+        require(_amount > 0, "Withdrawal amount must be greater than zero");
+        require(address(this).balance >= _amount, "Insufficient contract balance");
+        
+        (bool sent, ) = _to.call{value: _amount}("");
+        require(sent, "Failed to withdraw funds");
+    }
+    
+    /**
+     * @dev Get contract balance
+     */
+    function getContractBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+    
     // ============================================================================
     
-    // Allow contract to receive ETH (for future payment functionality)
+    // Allow contract to receive ETH (for milestone fund deposits)
     receive() external payable {}
     
     fallback() external payable {}
