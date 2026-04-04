@@ -3,12 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from typing import List, Optional
-from datetime import datetime
+from typing import List, Optional, Dict, Any
+from datetime import datetime, timedelta
 import json
 import os
 import io
 import uuid
+import secrets
 
 from database import engine, SessionLocal
 from models import Base, User, Project, Complaint, ComplaintRouting, RiskScore, Media
@@ -45,6 +46,15 @@ class UserRegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class OtpRequest(BaseModel):
+    phone: str
+
+class OtpVerifyRequest(BaseModel):
+    phone: str
+    otp: str
+    role: str = "Citizen"
+    full_name: Optional[str] = None
 
 class ComplaintSubmitRequest(BaseModel):
     project_id: int
@@ -93,6 +103,61 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+OTP_EXPIRY_MINUTES = max(1, int(os.getenv("OTP_EXPIRY_MINUTES", "5")))
+OTP_FIXED_CODE = os.getenv("OTP_FIXED_CODE", "123456").strip()
+OTP_STORE: Dict[str, Dict[str, Any]] = {}
+
+def normalize_phone_input(raw_phone: str) -> str:
+    """Normalize India phone input to 10 digits."""
+    digits = "".join(character for character in str(raw_phone) if character.isdigit())
+
+    # Handle +91 prefix if provided.
+    if len(digits) == 12 and digits.startswith("91"):
+        digits = digits[2:]
+
+    if len(digits) != 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Phone number must contain a valid 10-digit mobile number"
+        )
+
+    return digits
+
+def cleanup_expired_otps() -> None:
+    now = datetime.utcnow()
+    expired_keys = [
+        phone for phone, payload in OTP_STORE.items()
+        if payload.get("expires_at") and payload["expires_at"] < now
+    ]
+
+    for phone in expired_keys:
+        OTP_STORE.pop(phone, None)
+
+def issue_otp_code() -> str:
+    """Issue deterministic OTP in local/demo mode, random otherwise."""
+    if OTP_FIXED_CODE and len(OTP_FIXED_CODE) == 6 and OTP_FIXED_CODE.isdigit():
+        return OTP_FIXED_CODE
+
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+def normalize_role_input(role_value: str) -> UserRole:
+    aliases = {
+        "user": "Citizen",
+        "tender": "Contractor",
+        "citizen": "Citizen",
+        "contractor": "Contractor",
+    }
+
+    normalized = aliases.get(role_value.strip().lower(), role_value.strip())
+
+    try:
+        return UserRole(normalized)
+    except ValueError as role_error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid role. Must be one of: {', '.join([role.value for role in UserRole])}"
+        ) from role_error
 
 # ============================================================================
 # HEALTH CHECK ENDPOINTS
@@ -182,7 +247,114 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
             "user_id": user.id,
             "email": user.email,
             "role": user.role.value,
-            "full_name": user.full_name
+            "full_name": user.full_name,
+            "phone": user.phone,
+        }
+    }
+
+@app.post("/auth/request-otp")
+def request_otp(request: OtpRequest, db: Session = Depends(get_db)):
+    """Request an OTP code for phone-based authentication."""
+
+    phone = normalize_phone_input(request.phone)
+    cleanup_expired_otps()
+
+    otp_code = issue_otp_code()
+    expires_at = datetime.utcnow() + timedelta(minutes=OTP_EXPIRY_MINUTES)
+
+    OTP_STORE[phone] = {
+        "otp": otp_code,
+        "expires_at": expires_at,
+    }
+
+    existing_user = db.query(User).filter(User.phone == phone).order_by(User.id.asc()).first()
+    expose_otp = os.getenv("DEBUG", "false").lower() == "true" or bool(OTP_FIXED_CODE)
+
+    return {
+        "message": "OTP generated successfully",
+        "phone": phone,
+        "expires_in_seconds": OTP_EXPIRY_MINUTES * 60,
+        "existing_user": bool(existing_user),
+        "role_hint": existing_user.role.value if existing_user else None,
+        "dev_otp": otp_code if expose_otp else None,
+    }
+
+@app.post("/auth/verify-otp")
+def verify_otp(request: OtpVerifyRequest, db: Session = Depends(get_db)):
+    """Verify OTP and issue access tokens."""
+
+    phone = normalize_phone_input(request.phone)
+    cleanup_expired_otps()
+
+    otp_record = OTP_STORE.get(phone)
+    if not otp_record:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="OTP expired or not requested"
+        )
+
+    submitted_otp = request.otp.strip()
+    expected_otp = str(otp_record.get("otp", ""))
+
+    if submitted_otp != expected_otp:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid OTP code"
+        )
+
+    user_role = normalize_role_input(request.role)
+
+    user = db.query(User).filter(
+        User.phone == phone,
+        User.role == user_role,
+    ).first()
+
+    is_new_user = False
+
+    if not user:
+        base_email = f"{user_role.value.lower()}.{phone}@niyantrit.local"
+        email_candidate = base_email
+        suffix = 1
+
+        while db.query(User).filter(User.email == email_candidate).first():
+            suffix += 1
+            email_candidate = f"{user_role.value.lower()}.{phone}.{suffix}@niyantrit.local"
+
+        generated_password = f"{uuid.uuid4().hex}A!9"
+        user = User(
+            email=email_candidate,
+            password_hash=hash_password(generated_password),
+            full_name=request.full_name or f"{user_role.value} User",
+            role=user_role,
+            phone=phone,
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        is_new_user = True
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is inactive"
+        )
+
+    OTP_STORE.pop(phone, None)
+
+    tokens = create_tokens(user.id, user.email, user.role.value)
+
+    return {
+        "access_token": tokens.access_token,
+        "refresh_token": tokens.refresh_token,
+        "token_type": "bearer",
+        "user": {
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role.value,
+            "full_name": user.full_name,
+            "phone": user.phone,
+            "is_new_user": is_new_user,
         }
     }
 
@@ -267,6 +439,8 @@ def get_projects(
             "project_id": project.project_id,
             "project_name": project.project_name,
             "location": project.location,
+            "latitude": project.latitude,
+            "longitude": project.longitude,
             "total_funds": project.total_funds,
             "status": project.status.value,
             "risk_score": risk_score.risk_score if risk_score else None,
@@ -309,6 +483,8 @@ def get_project_detail(
         "project_id": project.project_id,
         "project_name": project.project_name,
         "location": project.location,
+        "latitude": project.latitude,
+        "longitude": project.longitude,
         "total_funds": project.total_funds,
         "labour_cost": project.labour_cost,
         "material_cost": project.material_cost,
