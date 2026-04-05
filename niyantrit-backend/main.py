@@ -3,7 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, text
-from typing import List, Optional, Dict, Any
+from sqlalchemy.exc import IntegrityError
+from typing import List, Optional, Dict, Any, Set
 from datetime import datetime, timedelta
 import hashlib
 import json
@@ -12,9 +13,26 @@ import os
 import io
 import uuid
 import secrets
+from dotenv import load_dotenv
+
+import firebase_admin
+from firebase_admin import credentials as firebase_credentials, auth as firebase_auth
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"), override=False)
 
 from database import engine, SessionLocal
-from models import Base, User, Project, Complaint, ComplaintRouting, RiskScore, Media
+from models import (
+    Base,
+    User,
+    Project,
+    Complaint,
+    ComplaintRouting,
+    RiskScore,
+    Media,
+    ComplaintSupport,
+    NotificationToken,
+)
 from models import UserRole, ComplaintStatus, ComplaintCategory, ProjectStatus, MediaVerificationStatus
 from auth import hash_password, verify_password, create_tokens, verify_token
 from middleware.auth_middleware import (
@@ -57,6 +75,14 @@ class OtpVerifyRequest(BaseModel):
     otp: str
     role: str = "Citizen"
     full_name: Optional[str] = None
+
+class FirebaseLoginRequest(BaseModel):
+    id_token: str
+    role: str = "Citizen"
+
+class NotificationTokenRequest(BaseModel):
+    token: str
+    platform: Optional[str] = None
 
 class ComplaintSubmitRequest(BaseModel):
     project_id: int
@@ -207,10 +233,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+cors_origins_raw = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000")
+cors_origins = [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()]
+
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -219,6 +248,53 @@ app.add_middleware(
 OTP_EXPIRY_MINUTES = max(1, int(os.getenv("OTP_EXPIRY_MINUTES", "5")))
 OTP_FIXED_CODE = os.getenv("OTP_FIXED_CODE", "123456").strip()
 OTP_STORE: Dict[str, Dict[str, Any]] = {}
+
+FIREBASE_CREDENTIALS_PATH = os.getenv("FIREBASE_CREDENTIALS_PATH", "").strip()
+FIREBASE_PROJECT_ID = os.getenv("FIREBASE_PROJECT_ID", "").strip()
+firebase_app = None
+
+def ensure_firebase_app():
+    global firebase_app
+
+    if firebase_app is not None:
+        return firebase_app
+
+    if not FIREBASE_CREDENTIALS_PATH:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Firebase credentials are not configured",
+        )
+
+    if not os.path.exists(FIREBASE_CREDENTIALS_PATH):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Firebase credentials file not found",
+        )
+
+    if not os.path.isfile(FIREBASE_CREDENTIALS_PATH):
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="FIREBASE_CREDENTIALS_PATH must point to a JSON file, not a directory",
+        )
+
+    try:
+        firebase_app = firebase_admin.get_app()
+        return firebase_app
+    except ValueError:
+        pass
+
+    try:
+        options = {"projectId": FIREBASE_PROJECT_ID} if FIREBASE_PROJECT_ID else None
+        firebase_app = firebase_admin.initialize_app(
+            firebase_credentials.Certificate(FIREBASE_CREDENTIALS_PATH),
+            options,
+        )
+        return firebase_app
+    except Exception as init_error:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to initialize Firebase Admin: {init_error}",
+        ) from init_error
 
 def normalize_phone_input(raw_phone: str) -> str:
     """Normalize India phone input to 10 digits."""
@@ -469,6 +545,131 @@ def verify_otp(request: OtpVerifyRequest, db: Session = Depends(get_db)):
             "is_new_user": is_new_user,
         }
     }
+
+@app.post("/auth/firebase-login")
+def firebase_login(request: FirebaseLoginRequest, db: Session = Depends(get_db)):
+    """Exchange Firebase ID token for Niyantrit JWTs."""
+
+    firebase_app = ensure_firebase_app()
+
+    try:
+        decoded = firebase_auth.verify_id_token(request.id_token, app=firebase_app)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Firebase token",
+        )
+
+    phone_number = decoded.get("phone_number")
+    email_value = (decoded.get("email") or "").strip().lower()
+    firebase_uid = (decoded.get("uid") or "user").strip()
+
+    normalized_phone: Optional[str] = None
+    if phone_number:
+        normalized_phone = normalize_phone_input(phone_number)
+
+    user_role = normalize_role_input(request.role)
+
+    user = None
+    if normalized_phone:
+        user = db.query(User).filter(
+            User.phone == normalized_phone,
+            User.role == user_role,
+        ).first()
+
+    if not user and email_value:
+        user = db.query(User).filter(User.email == email_value).first()
+        if user and user.role != user_role:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This email is already registered under a different role",
+            )
+
+    if not user and not normalized_phone and not email_value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Firebase token does not include a usable phone number or email",
+        )
+
+    is_new_user = False
+
+    if not user:
+        base_email = email_value or f"firebase.{firebase_uid}@niyantrit.local"
+        email_candidate = base_email
+        suffix = 1
+
+        while db.query(User).filter(User.email == email_candidate).first():
+            suffix += 1
+            email_candidate = f"firebase.{firebase_uid}.{suffix}@niyantrit.local"
+
+        generated_password = f"{uuid.uuid4().hex}A!9"
+        user = User(
+            email=email_candidate,
+            password_hash=hash_password(generated_password),
+            full_name=decoded.get("name") or f"{user_role.value} User",
+            role=user_role,
+            phone=normalized_phone,
+        )
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        is_new_user = True
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="User is inactive",
+        )
+
+    tokens = create_tokens(user.id, user.email, user.role.value)
+
+    return {
+        "access_token": tokens.access_token,
+        "refresh_token": tokens.refresh_token,
+        "token_type": "bearer",
+        "user": {
+            "user_id": user.id,
+            "email": user.email,
+            "role": user.role.value,
+            "full_name": user.full_name,
+            "phone": user.phone,
+            "is_new_user": is_new_user,
+        }
+    }
+
+@app.post("/notifications/register")
+def register_notification_token(
+    request: NotificationTokenRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Register or update a notification token for the current user."""
+
+    token_value = request.token.strip()
+    if not token_value:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Notification token is required",
+        )
+
+    existing = db.query(NotificationToken).filter(NotificationToken.token == token_value).first()
+    if existing:
+        existing.user_id = current_user.id
+        existing.platform = request.platform
+        existing.updated_at = datetime.utcnow()
+    else:
+        db.add(
+            NotificationToken(
+                user_id=current_user.id,
+                token=token_value,
+                platform=request.platform,
+            )
+        )
+
+    db.commit()
+
+    return {"status": "registered"}
 
 @app.get("/auth/me")
 def get_current_user_info(current_user: User = Depends(get_current_user)):
@@ -846,6 +1047,30 @@ def get_complaints(
             )
     
     complaints = query.offset(skip).limit(limit).all()
+
+    complaint_ids = [c.id for c in complaints]
+    support_counts: Dict[int, int] = {}
+    supported_by_me: Set[int] = set()
+
+    if complaint_ids:
+        support_counts = dict(
+            db.query(
+                ComplaintSupport.complaint_id,
+                func.count(ComplaintSupport.id),
+            )
+            .filter(ComplaintSupport.complaint_id.in_(complaint_ids))
+            .group_by(ComplaintSupport.complaint_id)
+            .all()
+        )
+        supported_by_me = {
+            complaint_id
+            for (complaint_id,) in db.query(ComplaintSupport.complaint_id)
+            .filter(
+                ComplaintSupport.complaint_id.in_(complaint_ids),
+                ComplaintSupport.user_id == current_user.id,
+            )
+            .all()
+        }
     
     result = []
     for c in complaints:
@@ -885,6 +1110,8 @@ def get_complaints(
             "media_mime_type": media_metadata["media_mime_type"],
             "media_size_bytes": media_metadata["media_size_bytes"],
             "evidence_hash": evidence_hash,
+            "support_count": int(support_counts.get(c.id, 0)),
+            "supported_by_me": c.id in supported_by_me,
         })
     
     return result
@@ -908,6 +1135,22 @@ def get_complaint_detail(
     project_longitude = complaint.project.longitude if complaint.project else None
     media_metadata = infer_media_metadata(complaint)
     evidence_hash = build_complaint_evidence_hash(complaint, project_location, media_metadata)
+
+    support_count = (
+        db.query(func.count(ComplaintSupport.id))
+        .filter(ComplaintSupport.complaint_id == complaint_id)
+        .scalar()
+        or 0
+    )
+    supported_by_me = (
+        db.query(ComplaintSupport.id)
+        .filter(
+            ComplaintSupport.complaint_id == complaint_id,
+            ComplaintSupport.user_id == current_user.id,
+        )
+        .first()
+        is not None
+    )
     
     return {
         "id": complaint.id,
@@ -940,6 +1183,8 @@ def get_complaint_detail(
         "media_mime_type": media_metadata["media_mime_type"],
         "media_size_bytes": media_metadata["media_size_bytes"],
         "evidence_hash": evidence_hash,
+        "support_count": int(support_count),
+        "supported_by_me": supported_by_me,
         "routing": [
             {
                 "assigned_to": r.assigned_official.full_name,
@@ -948,6 +1193,82 @@ def get_complaint_detail(
             } for r in complaint.routing
         ] if complaint.routing else [],
         "completeness_check": completeness
+    }
+
+
+@app.post("/complaints/{complaint_id}/support")
+def support_complaint(
+    complaint_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Support/upvote a complaint (1 per user)."""
+
+    complaint_exists = (
+        db.query(Complaint.id).filter(Complaint.id == complaint_id).first()
+    )
+    if not complaint_exists:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    support = ComplaintSupport(complaint_id=complaint_id, user_id=current_user.id)
+    db.add(support)
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+
+    support_count = (
+        db.query(func.count(ComplaintSupport.id))
+        .filter(ComplaintSupport.complaint_id == complaint_id)
+        .scalar()
+        or 0
+    )
+
+    return {
+        "complaint_id": complaint_id,
+        "supported": True,
+        "support_count": int(support_count),
+    }
+
+
+@app.delete("/complaints/{complaint_id}/support")
+def remove_support(
+    complaint_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Remove support/upvote for a complaint."""
+
+    complaint_exists = (
+        db.query(Complaint.id).filter(Complaint.id == complaint_id).first()
+    )
+    if not complaint_exists:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    existing = (
+        db.query(ComplaintSupport)
+        .filter(
+            ComplaintSupport.complaint_id == complaint_id,
+            ComplaintSupport.user_id == current_user.id,
+        )
+        .first()
+    )
+    if existing:
+        db.delete(existing)
+        db.commit()
+
+    support_count = (
+        db.query(func.count(ComplaintSupport.id))
+        .filter(ComplaintSupport.complaint_id == complaint_id)
+        .scalar()
+        or 0
+    )
+
+    return {
+        "complaint_id": complaint_id,
+        "supported": False,
+        "support_count": int(support_count),
     }
 
 @app.put("/complaints/{complaint_id}/resolve")

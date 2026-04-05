@@ -59,5 +59,18 @@ htmlcov/
 
 # Node (for frontend)
 node_modules/
-package-lock.json
 yarn.lock
+pnpm-lock.yaml
+
+niyantrit-f910e-firebase-adminsdk-fbsvc-c2c615398d.json
+
+# Backend local artifacts
+niyantrit-backend/*.wav
+niyantrit-backend/*.db
+niyantrit-backend/*.sqlite
+niyantrit-backend/__pycache__/
+niyantrit-backend/services/__pycache__/
+niyantrit-backend/middleware/__pycache__/
+
+# Frontend build artifacts
+niyantrit-frontend/dist/

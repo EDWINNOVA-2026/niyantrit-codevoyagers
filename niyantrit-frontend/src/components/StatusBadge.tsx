@@ -1,27 +1,27 @@
-import { ProjectStatus } from "../context/AppContext";
-import { cn } from "../lib/utils";
+import { ProjectStatus } from '../context/AppContext';
 
 interface StatusBadgeProps {
   status: ProjectStatus;
+  className?: string;
 }
 
-const statusStyles: Record<ProjectStatus, string> = {
-  Pending: "border-amber-200 bg-amber-50 text-amber-700",
-  Ongoing: "border-success/30 bg-success/10 text-success",
-  Completed: "border-primary/30 bg-primary/10 text-primary",
-};
+export function StatusBadge({ status, className = '' }: StatusBadgeProps) {
+  const getStatusColor = (status: ProjectStatus) => {
+    switch (status) {
+      case 'Completed':
+        return 'bg-[#138808] text-white';
+      case 'Ongoing':
+        return 'bg-[#FF9933] text-white';
+      case 'Pending':
+        return 'bg-gray-400 text-white';
+      default:
+        return 'bg-gray-400 text-white';
+    }
+  };
 
-function StatusBadge({ status }: StatusBadgeProps) {
   return (
-    <span
-      className={cn(
-        "inline-flex rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em]",
-        statusStyles[status]
-      )}
-    >
+    <span className={`px-3 py-1 rounded-full text-sm whitespace-nowrap ${getStatusColor(status)} ${className}`}>
       {status}
     </span>
   );
 }
-
-export default StatusBadge;

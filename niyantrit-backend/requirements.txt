@@ -19,3 +19,4 @@ opencv-python>=4.6.0
 Pillow>=10.3.0
 exifread>=2.3.2
 web3>=6.0.0
+firebase-admin>=6.4.0

@@ -1,18 +1,14 @@
-import { BrowserRouter } from "react-router-dom";
-import AppErrorBoundary from "./components/AppErrorBoundary";
+import { RouterProvider } from "react-router-dom";
 import { AppProvider } from "./context/AppContext";
-import { AppRoutes } from "./routes";
+import { router } from "./routes";
+import { AppBackground } from "./components/AppBackground";
 
-function App() {
+export default function App() {
   return (
     <AppProvider>
-      <BrowserRouter>
-        <AppErrorBoundary>
-          <AppRoutes />
-        </AppErrorBoundary>
-      </BrowserRouter>
+      <AppBackground>
+        <RouterProvider router={router} />
+      </AppBackground>
     </AppProvider>
   );
 }
-
-export default App;

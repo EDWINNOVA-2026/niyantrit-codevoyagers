@@ -1,568 +1,245 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Navigation } from "lucide-react";
+import { useMemo, useState } from "react";
+import { MapPin, Navigation, Maximize2 } from "lucide-react";
 import {
   CircleMarker,
   MapContainer,
   Popup,
   TileLayer,
   Tooltip,
-  useMap,
-  useMapEvents,
+  ZoomControl,
 } from "react-leaflet";
-import L from "leaflet";
+import type { LatLngExpression } from "leaflet";
 import { Project } from "../context/AppContext";
 
 interface MapViewProps {
   projects: Project[];
   userLocation: { lat: number; lng: number } | null;
   onProjectClick: (projectId: string) => void;
+  projectCounts?: Record<string, number>;
 }
 
-const INDIA_CENTER: [number, number] = [20.5937, 78.9629];
-const USER_MARKER_COLOR = "#2563EB";
-const DISTANCE_OPTIONS = [5, 10, 25, 50, 100, 250, "all"] as const;
+const INDIA_CENTER: LatLngExpression = [22.5, 78.5];
 
-type MapStatusFilter = "All" | Project["status"];
-type DistanceFilterValue = (typeof DISTANCE_OPTIONS)[number];
-
-function riskTone(riskLevel: Project["riskLevel"]) {
-  if (riskLevel === "CRITICAL") return "#B91C1C";
-  if (riskLevel === "VERY_HIGH") return "#DC2626";
-  if (riskLevel === "HIGH") return "#F97316";
-  if (riskLevel === "MODERATE") return "#F59E0B";
-  if (riskLevel === "LOW") return "#16A34A";
-  return "#6B7280";
+function densityTone(count: number, max: number) {
+  const ratio = max <= 0 ? 0 : count / max;
+  if (ratio >= 0.7) return "#dc2626";
+  if (ratio >= 0.4) return "#f97316";
+  if (ratio >= 0.2) return "#f59e0b";
+  return "#2563eb";
 }
 
-function riskMarkerRadius(project: Project, isSelected: boolean) {
-  const base = isSelected ? 9 : 6;
-  if (project.riskLevel === "CRITICAL") return base + 5;
-  if (project.riskLevel === "VERY_HIGH") return base + 4;
-  if (project.riskLevel === "HIGH") return base + 3;
-  if (project.riskLevel === "MODERATE") return base + 2;
-  if (project.riskLevel === "LOW") return base + 1;
-  return base + 1;
+function statusTone(status: Project["status"]) {
+  if (status === "Completed") return "#10b981";
+  if (status === "Ongoing") return "#f59e0b";
+  return "#94a3b8";
 }
 
-function formatRiskLevel(riskLevel: Project["riskLevel"]) {
-  return riskLevel.replace("_", " ");
+function isValidCoord(value: number | null | undefined) {
+  return typeof value === "number" && !Number.isNaN(value) && Math.abs(value) > 0;
 }
 
-function formatRiskScore(score: number | null) {
-  if (typeof score !== "number" || !Number.isFinite(score)) return "n/a";
-  return `${Math.round(score)}/100`;
+function hashSeed(input: string) {
+  return Array.from(input).reduce((acc, char) => acc + char.charCodeAt(0), 0);
 }
 
-function isValidCoordinate(lat: number, lng: number) {
-  return Number.isFinite(lat) && Number.isFinite(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
-}
+function pseudoCoordinates(projectId: string, index: number) {
+  const baseLat = 22.5;
+  const baseLng = 78.5;
+  const seed = hashSeed(projectId) + index * 97;
+  const angle = (seed % 360) * (Math.PI / 180);
+  const radius = 2 + (seed % 80) / 10;
 
-function haversineDistanceKm(
-  lat1: number,
-  lng1: number,
-  lat2: number,
-  lng2: number
-) {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const earthRadiusKm = 6371;
-
-  const dLat = toRad(lat2 - lat1);
-  const dLng = toRad(lng2 - lng1);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-
-  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-function FitBounds({
-  points,
-  selectedPoint,
-  fallbackCenter,
-  skipNextFitSignal,
-}: {
-  points: Array<[number, number]>;
-  selectedPoint: [number, number] | null;
-  fallbackCenter: [number, number];
-  skipNextFitSignal: number;
-}) {
-  const map = useMap();
-  const skipNextFitRef = useRef(false);
-
-  useEffect(() => {
-    skipNextFitRef.current = true;
-  }, [skipNextFitSignal]);
-
-  useEffect(() => {
-    if (selectedPoint) {
-      map.flyTo(selectedPoint, 11, { duration: 0.8 });
-      return;
-    }
-
-    if (skipNextFitRef.current) {
-      skipNextFitRef.current = false;
-      return;
-    }
-
-    if (!points.length) {
-      map.setView(fallbackCenter, 5);
-      return;
-    }
-
-    if (points.length === 1) {
-      map.flyTo(points[0], 10, { duration: 0.8 });
-      return;
-    }
-
-    const bounds = L.latLngBounds(points);
-    map.fitBounds(bounds.pad(0.2));
-  }, [map, points, selectedPoint, fallbackCenter]);
-
-  return null;
-}
-
-function ClearSelectionOnMapClick({
-  clearSelection,
-}: {
-  clearSelection: () => void;
-}) {
-  useMapEvents({
-    click: () => clearSelection(),
-  });
-
-  return null;
-}
-
-function SyncLeafletLayout({
-  resizeSignal,
-}: {
-  resizeSignal: number;
-}) {
-  const map = useMap();
-
-  useEffect(() => {
-    const raf = window.requestAnimationFrame(() => {
-      map.invalidateSize({ pan: false, debounceMoveend: true });
-    });
-
-    return () => window.cancelAnimationFrame(raf);
-  }, [map, resizeSignal]);
-
-  useEffect(() => {
-    const container = map.getContainer();
-
-    const onWindowResize = () => {
-      map.invalidateSize({ pan: false, debounceMoveend: true });
-    };
-
-    window.addEventListener("resize", onWindowResize);
-
-    const observer = new ResizeObserver(() => {
-      map.invalidateSize({ pan: false, debounceMoveend: true });
-    });
-    observer.observe(container);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", onWindowResize);
-    };
-  }, [map]);
-
-  return null;
-}
-
-function EnsureMapInteraction() {
-  const map = useMap();
-
-  useEffect(() => {
-    map.scrollWheelZoom.enable();
-    map.dragging.enable();
-    map.doubleClickZoom.enable();
-  }, [map]);
-
-  return null;
-}
-
-function ManualMapActions({
-  locateSignal,
-  fitSignal,
-  userPoint,
-  points,
-}: {
-  locateSignal: number;
-  fitSignal: number;
-  userPoint: [number, number] | null;
-  points: Array<[number, number]>;
-}) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!locateSignal || !userPoint) return;
-    map.flyTo(userPoint, 10, { duration: 0.8 });
-  }, [locateSignal, userPoint, map]);
-
-  useEffect(() => {
-    if (!fitSignal) return;
-
-    if (points.length === 1) {
-      map.flyTo(points[0], 10, { duration: 0.8 });
-      return;
-    }
-
-    if (points.length > 1) {
-      map.fitBounds(L.latLngBounds(points).pad(0.2));
-      return;
-    }
-
-    if (userPoint) {
-      map.flyTo(userPoint, 6, { duration: 0.8 });
-    }
-  }, [fitSignal, points, userPoint, map]);
-
-  return null;
-}
-
-function MapView({ projects, userLocation, onProjectClick }: MapViewProps) {
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("All");
-  const [statusFilter, setStatusFilter] = useState<MapStatusFilter>("All");
-  const [distanceFilter, setDistanceFilter] = useState<DistanceFilterValue>("all");
-  const [skipNextFitSignal, setSkipNextFitSignal] = useState(0);
-  const [locateSignal, setLocateSignal] = useState(0);
-  const [fitSignal, setFitSignal] = useState(0);
-
-  const clearSelectedProject = () => {
-    if (selectedProjectId === "All") return;
-    setSkipNextFitSignal((current) => current + 1);
-    setSelectedProjectId("All");
+  return {
+    lat: baseLat + radius * Math.cos(angle),
+    lng: baseLng + radius * Math.sin(angle),
   };
+}
 
-  const handleProjectMarkerClick = (projectId: string) => {
-    setSelectedProjectId((current) => {
-      if (current === projectId) {
-        setSkipNextFitSignal((value) => value + 1);
-        return "All";
-      }
-      return projectId;
-    });
-  };
+export function MapView({
+  projects,
+  userLocation,
+  onProjectClick,
+  projectCounts,
+}: MapViewProps) {
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
-  const mappableProjects = useMemo(
+  const maxCount = projectCounts
+    ? Math.max(1, ...Object.values(projectCounts))
+    : 1;
+
+  const projectPoints = useMemo(
     () =>
-      projects.filter((project) =>
-        isValidCoordinate(project.location.latitude, project.location.longitude)
-      ),
-    [projects]
+      projects.map((project, index) => {
+        const hasCoords =
+          isValidCoord(project.location.latitude) &&
+          isValidCoord(project.location.longitude);
+
+        const coords = hasCoords
+          ? {
+              lat: project.location.latitude as number,
+              lng: project.location.longitude as number,
+            }
+          : pseudoCoordinates(project.id, index);
+
+        return { project, coords };
+      }),
+    [projects],
   );
 
-  const filteredByStatus = useMemo(() => {
-    if (statusFilter === "All") return mappableProjects;
-    return mappableProjects.filter((project) => project.status === statusFilter);
-  }, [mappableProjects, statusFilter]);
-
-  const distanceOrigin = useMemo<[number, number]>(
-    () => (userLocation ? [userLocation.lat, userLocation.lng] : INDIA_CENTER),
-    [userLocation]
-  );
-
-  const filteredByDistance = useMemo(() => {
-    if (distanceFilter === "all") return filteredByStatus;
-
-    return filteredByStatus.filter((project) => {
-      const distance = haversineDistanceKm(
-        distanceOrigin[0],
-        distanceOrigin[1],
-        project.location.latitude,
-        project.location.longitude
-      );
-
-      return distance <= distanceFilter;
-    });
-  }, [filteredByStatus, distanceFilter, distanceOrigin]);
-
-  useEffect(() => {
-    if (selectedProjectId === "All") return;
-    const stillVisible = filteredByDistance.some((project) => project.id === selectedProjectId);
-    if (!stillVisible) setSelectedProjectId("All");
-  }, [filteredByDistance, selectedProjectId]);
-
-  const visibleProjects = useMemo(() => {
-    if (selectedProjectId === "All") return filteredByDistance;
-    return filteredByDistance.filter((project) => project.id === selectedProjectId);
-  }, [filteredByDistance, selectedProjectId]);
-
-  const selectedProject = useMemo(
-    () => mappableProjects.find((project) => project.id === selectedProjectId) || null,
-    [mappableProjects, selectedProjectId]
-  );
-
-  const userPoint = userLocation ? ([userLocation.lat, userLocation.lng] as [number, number]) : null;
-
-  const fallbackCenter: [number, number] = userLocation
+  const mapCenter: LatLngExpression = userLocation
     ? [userLocation.lat, userLocation.lng]
-    : INDIA_CENTER;
+    : projectPoints[0]
+      ? [projectPoints[0].coords.lat, projectPoints[0].coords.lng]
+      : INDIA_CENTER;
 
-  const pointList = useMemo<Array<[number, number]>>(
-    () => visibleProjects.map((project) => [project.location.latitude, project.location.longitude]),
-    [visibleProjects]
-  );
+  const mapZoom = projects.length <= 1 ? 10 : 5;
 
-  const selectedPoint = selectedProject
-    ? ([selectedProject.location.latitude, selectedProject.location.longitude] as [number, number])
-    : null;
-
-  const distanceFilterLabel =
-    distanceFilter === "all" ? "across all distances" : `within ${distanceFilter} km`;
-
-  const highRiskCount = useMemo(
-    () =>
-      visibleProjects.filter((project) =>
-        project.riskLevel === "HIGH" ||
-        project.riskLevel === "VERY_HIGH" ||
-        project.riskLevel === "CRITICAL"
-      ).length,
-    [visibleProjects]
-  );
-
-  const criticalCount = useMemo(
-    () => visibleProjects.filter((project) => project.riskLevel === "CRITICAL").length,
-    [visibleProjects]
-  );
+  const handleProjectClick = (projectId: string) => {
+    setSelectedProject(projectId);
+    onProjectClick(projectId);
+  };
 
   return (
-    <div className="space-y-3">
-      <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Navigation className="h-5 w-5 text-[#FF9933]" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Risk Intelligence Map</p>
-              <p className="text-xs text-muted-foreground">
-                {criticalCount} critical · {highRiskCount} high-risk
-              </p>
-            </div>
-          </div>
+    <div className="relative h-full w-full overflow-hidden rounded-xl border border-border">
+      <MapContainer
+        center={mapCenter}
+        zoom={mapZoom}
+        zoomControl={false}
+        scrollWheelZoom
+        className="h-full w-full"
+      >
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <ZoomControl position="bottomright" />
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setFitSignal((current) => current + 1)}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
-            >
-              Fit Projects
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocateSignal((current) => current + 1)}
-              disabled={!userPoint}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Locate Me
-            </button>
-          </div>
-        </div>
+        {userLocation && (
+          <CircleMarker
+            center={[userLocation.lat, userLocation.lng]}
+            radius={8}
+            pathOptions={{ color: "#2563eb", fillColor: "#3b82f6", fillOpacity: 0.9 }}
+          >
+            <Tooltip direction="top" offset={[0, -6]}>
+              Your location
+            </Tooltip>
+          </CircleMarker>
+        )}
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Filter Status
-            <select
-              value={statusFilter}
-              onChange={(event) => setStatusFilter(event.target.value as MapStatusFilter)}
-              className="mt-1 block w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground"
-            >
-              <option value="All">All</option>
-              <option value="Pending">Pending</option>
-              <option value="Ongoing">Ongoing</option>
-              <option value="Completed">Completed</option>
-            </select>
-          </label>
+        {projectPoints.map(({ project, coords }) => {
+          const issueCount = projectCounts?.[project.id] ?? 0;
+          const showCounts = Boolean(projectCounts);
+          const color = showCounts
+            ? densityTone(issueCount, maxCount)
+            : statusTone(project.status);
 
-          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Select Project
-            <select
-              value={selectedProjectId}
-              onChange={(event) => setSelectedProjectId(event.target.value)}
-              className="mt-1 block w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground"
-            >
-              <option value="All">All Projects</option>
-              {filteredByDistance.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          const ratio = maxCount <= 0 ? 0 : issueCount / maxCount;
+          const radius = showCounts
+            ? 6 + Math.min(10, Math.round(ratio * 10))
+            : 8;
 
-          <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
-            Distance Range
-            <select
-              value={distanceFilter}
-              onChange={(event) => {
-                const { value } = event.target;
-                setDistanceFilter(value === "all" ? "all" : (Number(value) as DistanceFilterValue));
-              }}
-              className="mt-1 block w-full rounded-lg border border-border bg-background px-2.5 py-2 text-sm text-foreground"
-            >
-              {DISTANCE_OPTIONS.map((option) => (
-                <option key={String(option)} value={option}>
-                  {option === "all" ? "All Distances" : `Within ${option} km`}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
+          const isSelected = selectedProject === project.id;
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          {selectedProjectId !== "All" ? (
-            <button
-              type="button"
-              onClick={clearSelectedProject}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
-            >
-              Clear Selected Project
-            </button>
-          ) : null}
-
-          {visibleProjects.length === 0 && distanceFilter !== "all" ? (
-            <button
-              type="button"
-              onClick={() => setDistanceFilter("all")}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary"
-            >
-              Show All Distances
-            </button>
-          ) : null}
-        </div>
-      </section>
-
-      <div className="relative isolate z-0 h-[420px] min-h-[340px] w-full overflow-hidden rounded-xl border border-border shadow-inner">
-        <MapContainer
-          center={fallbackCenter}
-          zoom={6}
-          scrollWheelZoom={true}
-          className="relative z-0 h-full w-full cursor-grab active:cursor-grabbing"
-        >
-          <TileLayer
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          />
-
-          <EnsureMapInteraction />
-          <ManualMapActions
-            locateSignal={locateSignal}
-            fitSignal={fitSignal}
-            userPoint={userPoint}
-            points={pointList}
-          />
-          <ClearSelectionOnMapClick clearSelection={clearSelectedProject} />
-
-          <FitBounds
-            points={pointList}
-            selectedPoint={selectedPoint}
-            fallbackCenter={fallbackCenter}
-            skipNextFitSignal={skipNextFitSignal}
-          />
-
-          <SyncLeafletLayout resizeSignal={skipNextFitSignal} />
-
-          {userLocation ? (
-            <CircleMarker
-              center={[userLocation.lat, userLocation.lng]}
-              radius={8}
-              pathOptions={{
-                color: USER_MARKER_COLOR,
-                fillColor: USER_MARKER_COLOR,
-                fillOpacity: 0.9,
-              }}
-            >
-              <Tooltip direction="top" offset={[0, -4]}>
-                Your location
-              </Tooltip>
-            </CircleMarker>
-          ) : null}
-
-          {visibleProjects.map((project) => (
+          return (
             <CircleMarker
               key={project.id}
-              center={[project.location.latitude, project.location.longitude]}
-              radius={riskMarkerRadius(project, project.id === selectedProjectId)}
-              eventHandlers={{
-                click: () => handleProjectMarkerClick(project.id),
-              }}
+              center={[coords.lat, coords.lng]}
+              radius={isSelected ? radius + 2 : radius}
               pathOptions={{
-                color: riskTone(project.riskLevel),
-                fillColor: riskTone(project.riskLevel),
-                fillOpacity: 0.9,
-                weight: 2,
-                bubblingMouseEvents: false,
+                color,
+                fillColor: color,
+                fillOpacity: 0.85,
+                weight: isSelected ? 3 : 2,
+              }}
+              eventHandlers={{
+                click: () => handleProjectClick(project.id),
               }}
             >
-              <Tooltip direction="top" offset={[0, -4]}>
+              <Tooltip direction="top" offset={[0, -6]}>
                 {project.name}
               </Tooltip>
               <Popup>
-                <div className="min-w-[220px] space-y-2">
-                  <h4 className="text-sm font-semibold text-[#0A3D62]">{project.name}</h4>
-                  <p className="text-xs text-gray-600">
+                <div className="space-y-1 text-sm">
+                  <p className="text-foreground" style={{ fontWeight: 600 }}>
+                    {project.name}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
                     {project.location.city}, {project.location.state}
                   </p>
-                  <p className="text-xs text-gray-600">Status: {project.status}</p>
-                  <p className="text-xs text-gray-700">
-                    Risk: <span className="font-semibold">{formatRiskLevel(project.riskLevel)}</span> ({formatRiskScore(project.riskScore)})
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => onProjectClick(project.id)}
-                    className="w-full rounded-md bg-[#0A3D62] px-2 py-1.5 text-xs font-semibold text-white"
-                  >
-                    Open Project
-                  </button>
+                  <p className="text-xs text-muted-foreground">Status: {project.status}</p>
+                  {showCounts && (
+                    <p className="text-xs text-muted-foreground">
+                      Issues: {issueCount}
+                    </p>
+                  )}
                 </div>
               </Popup>
             </CircleMarker>
-          ))}
-        </MapContainer>
+          );
+        })}
+      </MapContainer>
+
+      <div className="pointer-events-none absolute top-4 left-4 right-4 z-[1000] flex items-center justify-between">
+        <div className="pointer-events-auto bg-white rounded-lg shadow-lg px-4 py-2 flex items-center gap-2">
+          <Navigation className="w-5 h-5 text-primary" />
+          <span className="text-sm text-gray-700">
+            {projectCounts ? "Issue Map View" : "Live Map View"}
+          </span>
+        </div>
+        <button className="pointer-events-auto bg-white rounded-lg shadow-lg p-2 hover:bg-gray-50 transition-colors">
+          <Maximize2 className="w-5 h-5 text-gray-700" />
+        </button>
       </div>
 
-      {visibleProjects.length === 0 ? (
-        <p className="rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted-foreground">
-          No projects match current map filters.
+      <div className="pointer-events-none absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg p-3">
+        {projectCounts ? (
+          <>
+            <p className="text-xs text-gray-600 mb-2">Issue Density</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-blue-600" />
+                <span className="text-xs text-gray-700">Low</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-amber-500" />
+                <span className="text-xs text-gray-700">Medium</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-orange-500" />
+                <span className="text-xs text-gray-700">High</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-red-600" />
+                <span className="text-xs text-gray-700">Critical</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-gray-600 mb-2">Status</p>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-amber-500" />
+                <span className="text-xs text-gray-700">Ongoing</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs text-gray-700">Completed</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-gray-500" />
+                <span className="text-xs text-gray-700">Pending</span>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="pointer-events-none absolute bottom-4 right-4 z-[1000] bg-primary text-primary-foreground rounded-lg shadow-lg px-4 py-2">
+        <p className="text-sm">
+          <span className="text-2xl">{projects.length}</span> Projects
         </p>
-      ) : null}
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-border bg-card p-3">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">Risk Legend</p>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#B91C1C]" />
-              <span className="text-xs text-foreground">Critical</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-[#F97316]" />
-              <span className="text-xs text-foreground">High</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full bg-gray-500" />
-              <span className="text-xs text-foreground">Unknown</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-3 w-3 rounded-full" style={{ backgroundColor: USER_MARKER_COLOR }} />
-              <span className="text-xs text-foreground">You</span>
-            </div>
-            <p className="pt-1 text-[11px] text-muted-foreground">Larger markers indicate higher risk.</p>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-border bg-[#0A3D62] px-4 py-3 text-white">
-          <p className="text-sm">
-            <span className="text-2xl font-semibold">{visibleProjects.length}</span> shown {distanceFilterLabel}
-          </p>
-          <p className="text-xs text-white/80">{highRiskCount} high-risk in view</p>
-        </div>
       </div>
     </div>
   );
 }
-
-export default MapView;

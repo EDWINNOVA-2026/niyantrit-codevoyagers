@@ -1,20 +1,14 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Circle,
-  CircleMarker,
-  MapContainer,
-  Popup,
-  TileLayer,
-  Tooltip,
-  useMap,
-} from "react-leaflet";
-import L from "leaflet";
 import Navbar from "../components/Navbar";
+import { MapView } from "../components/MapView";
 import { Post, Project, useAppContext } from "../context/AppContext";
-
-const INDIA_CENTER: [number, number] = [20.5937, 78.9629];
-const USER_MARKER_COLOR = "#2563EB";
+import {
+  AlertTriangle,
+  MapPin,
+  Flame,
+  Activity,
+} from "lucide-react";
 
 interface AggregatedIssue {
   project: Project;
@@ -22,159 +16,85 @@ interface AggregatedIssue {
   openCount: number;
   avgSeverity: number;
   maxSeverity: number;
-  latestAt: string;
-}
-
-function FitHeatmapBounds({ points }: { points: AggregatedIssue[] }) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (!points.length) {
-      map.setView(INDIA_CENTER, 5);
-      return;
-    }
-
-    if (points.length === 1) {
-      map.setView(
-        [points[0].project.location.latitude, points[0].project.location.longitude],
-        10
-      );
-      return;
-    }
-
-    const bounds = L.latLngBounds(
-      points.map((item) => [item.project.location.latitude, item.project.location.longitude])
-    );
-    map.fitBounds(bounds.pad(0.2));
-  }, [map, points]);
-
-  return null;
-}
-
-function isOpenIssue(status: string) {
-  const normalized = status.trim().toLowerCase();
-  return normalized !== "resolved" && normalized !== "closed";
-}
-
-function colorForDensity(count: number, maxCount: number) {
-  const ratio = maxCount <= 0 ? 0 : count / maxCount;
-  if (ratio >= 0.8) return "#B91C1C";
-  if (ratio >= 0.6) return "#EA580C";
-  if (ratio >= 0.4) return "#F59E0B";
-  if (ratio >= 0.2) return "#84CC16";
-  return "#2563EB";
 }
 
 function groupIssuesByProject(posts: Post[], projects: Project[]) {
-  const projectById = new Map(projects.map((project) => [project.id, project]));
+  const byId = new Map(projects.map((p) => [p.id, p]));
   const grouped = new Map<
     string,
     {
       project: Project;
       count: number;
       openCount: number;
-      totalSeverity: number;
-      maxSeverity: number;
-      latestAt: string;
+      totalSev: number;
+      maxSev: number;
     }
   >();
-
   posts.forEach((post) => {
-    const project = projectById.get(post.projectId);
+    const project = byId.get(post.projectId);
     if (!project) return;
-
-    const existing = grouped.get(project.id) || {
+    const e = grouped.get(project.id) || {
       project,
       count: 0,
       openCount: 0,
-      totalSeverity: 0,
-      maxSeverity: 0,
-      latestAt: post.createdAt,
+      totalSev: 0,
+      maxSev: 0,
     };
-
-    existing.count += 1;
-    existing.totalSeverity += post.severity;
-    existing.maxSeverity = Math.max(existing.maxSeverity, post.severity);
-
-    if (isOpenIssue(post.complaintStatus)) {
-      existing.openCount += 1;
-    }
-
-    if (new Date(post.createdAt).getTime() > new Date(existing.latestAt).getTime()) {
-      existing.latestAt = post.createdAt;
-    }
-
-    grouped.set(project.id, existing);
+    e.count++;
+    e.totalSev += post.severity;
+    e.maxSev = Math.max(e.maxSev, post.severity);
+    if (post.complaintStatus !== "Resolved" && post.complaintStatus !== "Closed")
+      e.openCount++;
+    grouped.set(project.id, e);
   });
-
   return Array.from(grouped.values())
-    .map((item) => ({
-      project: item.project,
-      count: item.count,
-      openCount: item.openCount,
-      avgSeverity: Number((item.totalSeverity / item.count).toFixed(1)),
-      maxSeverity: item.maxSeverity,
-      latestAt: item.latestAt,
+    .map((i) => ({
+      project: i.project,
+      count: i.count,
+      openCount: i.openCount,
+      avgSeverity: +(i.totalSev / i.count).toFixed(1),
+      maxSeverity: i.maxSev,
     }))
-    .sort((first, second) => second.count - first.count);
+    .sort((a, b) => b.count - a.count);
 }
 
-function Issues() {
+export default function Issues() {
   const navigate = useNavigate();
   const { isAuthenticated, posts, projects } = useAppContext();
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // Ignore very coarse location fixes (e.g., IP-level fallback).
-        if (Number.isFinite(position.coords.accuracy) && position.coords.accuracy > 50000) {
-          setUserLocation(null);
-          return;
-        }
-
-        setUserLocation({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-      },
-      () => setUserLocation(null),
-      { enableHighAccuracy: true, maximumAge: 60000, timeout: 12000 }
-    );
-  }, []);
-
-  const issueDensity = useMemo(
+  const density = useMemo(
     () => groupIssuesByProject(posts, projects),
-    [posts, projects]
+    [posts, projects],
   );
 
-  const maxCount = issueDensity[0]?.count ?? 1;
+  const projectCounts = useMemo(() => {
+    return Object.fromEntries(density.map((d) => [d.project.id, d.count]));
+  }, [density]);
 
-  const summary = useMemo(() => {
-    const totalIssues = posts.length;
-    const openIssues = posts.filter((post) => isOpenIssue(post.complaintStatus)).length;
-    const highSeverity = posts.filter((post) => post.severity >= 7).length;
-    const impactedProjects = issueDensity.length;
-
-    return { totalIssues, openIssues, highSeverity, impactedProjects };
-  }, [posts, issueDensity]);
+  const summary = useMemo(
+    () => ({
+      totalIssues: posts.length,
+      openIssues: posts.filter(
+        (p) => p.complaintStatus !== "Resolved" && p.complaintStatus !== "Closed",
+      ).length,
+      highSeverity: posts.filter((p) => p.severity >= 7).length,
+      impactedProjects: density.length,
+    }),
+    [posts, density],
+  );
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen">
         <Navbar />
-        <main className="mx-auto flex min-h-[calc(100vh-1px)] w-full max-w-3xl items-center px-4 py-8 sm:px-6 lg:px-8">
-          <section className="w-full rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <main className="mx-auto flex min-h-[60vh] max-w-lg items-center px-4 py-8">
+          <section className="w-full rounded-2xl border border-border bg-white p-8 text-center shadow-lg">
             <p className="text-sm text-muted-foreground">You are not signed in.</p>
-            <h1 className="mt-2 text-2xl font-bold text-foreground">Open the login flow to continue</h1>
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="mt-6 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+              className="mt-4 rounded-xl bg-primary px-6 py-2.5 text-sm text-primary-foreground"
+              style={{ fontWeight: 600 }}
             >
               Go to Login
             </button>
@@ -185,139 +105,152 @@ function Issues() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       <Navbar />
       <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-        <section className="rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">Issue Intelligence</p>
-          <h1 className="mt-1 text-2xl font-bold text-foreground sm:text-3xl">
-            User Report Heatmap
-          </h1>
+        {/* Header */}
+        <section className="rounded-2xl border border-border bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-100">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <p
+                className="text-xs tracking-[0.2em] text-red-600 uppercase"
+                style={{ fontWeight: 600 }}
+              >
+                Issue Intelligence
+              </p>
+              <h1 className="text-2xl text-foreground sm:text-3xl" style={{ fontWeight: 700 }}>
+                Complaint Heatmap
+              </h1>
+            </div>
+          </div>
           <p className="mt-2 text-sm text-muted-foreground">
-            Density map of issues raised by all users across all tracked projects.
+            Density analysis of issues raised across all tracked projects.
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard label="Total Issues" value={summary.totalIssues} />
-            <SummaryCard label="Open Issues" value={summary.openIssues} />
-            <SummaryCard label="High Severity" value={summary.highSeverity} />
-            <SummaryCard label="Impacted Projects" value={summary.impactedProjects} />
+            <SummaryCard
+              icon={Activity}
+              label="Total Issues"
+              value={summary.totalIssues}
+              bg="bg-blue-50"
+              fg="text-blue-700"
+              iconBg="bg-blue-100"
+            />
+            <SummaryCard
+              icon={AlertTriangle}
+              label="Open Issues"
+              value={summary.openIssues}
+              bg="bg-amber-50"
+              fg="text-amber-700"
+              iconBg="bg-amber-100"
+            />
+            <SummaryCard
+              icon={Flame}
+              label="High Severity"
+              value={summary.highSeverity}
+              bg="bg-red-50"
+              fg="text-red-700"
+              iconBg="bg-red-100"
+            />
+            <SummaryCard
+              icon={MapPin}
+              label="Impacted Projects"
+              value={summary.impactedProjects}
+              bg="bg-slate-50"
+              fg="text-slate-700"
+              iconBg="bg-slate-200"
+            />
           </div>
         </section>
 
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-            <h2 className="text-lg font-semibold text-foreground">Issue Heatmap</h2>
+          {/* Visual Heatmap */}
+          <section className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+            <h2 className="text-lg text-foreground" style={{ fontWeight: 600 }}>
+              Issue Density Map
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Circle size and color indicate complaint density per project location.
+              Relative complaint concentration per project location.
             </p>
 
-            <div className="relative isolate z-0 mt-4 h-[520px] overflow-hidden rounded-xl border border-border">
-              <MapContainer
-                center={INDIA_CENTER}
-                zoom={5}
-                scrollWheelZoom
-                className="relative z-0 h-full w-full"
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-
-                <FitHeatmapBounds points={issueDensity} />
-
-                {userLocation ? (
-                  <CircleMarker
-                    center={[userLocation.lat, userLocation.lng]}
-                    radius={8}
-                    pathOptions={{
-                      color: USER_MARKER_COLOR,
-                      fillColor: USER_MARKER_COLOR,
-                      fillOpacity: 0.9,
-                    }}
-                  >
-                    <Tooltip direction="top" offset={[0, -4]}>
-                      Your location
-                    </Tooltip>
-                  </CircleMarker>
-                ) : null}
-
-                {issueDensity.map((item) => {
-                  const color = colorForDensity(item.count, maxCount);
-                  return (
-                    <Circle
-                      key={item.project.id}
-                      center={[item.project.location.latitude, item.project.location.longitude]}
-                      radius={1200 + item.count * 800}
-                      pathOptions={{
-                        color,
-                        fillColor: color,
-                        fillOpacity: 0.35,
-                        weight: 1,
-                      }}
-                    >
-                      <Tooltip direction="top">
-                        {item.project.name} ({item.count} issues)
-                      </Tooltip>
-                      <Popup>
-                        <div className="min-w-[220px]">
-                          <p className="text-sm font-semibold text-foreground">{item.project.name}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {item.project.location.city}, {item.project.location.state}
-                          </p>
-                          <div className="mt-3 grid gap-1 text-xs text-foreground">
-                            <p>Total Issues: {item.count}</p>
-                            <p>Open Issues: {item.openCount}</p>
-                            <p>Average Severity: {item.avgSeverity}</p>
-                            <p>Max Severity: {item.maxSeverity}</p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => navigate(`/project/${item.project.id}`)}
-                            className="mt-3 w-full rounded-md bg-primary px-2 py-1.5 text-xs font-semibold text-primary-foreground"
-                          >
-                            Open Project
-                          </button>
-                        </div>
-                      </Popup>
-                    </Circle>
-                  );
-                })}
-              </MapContainer>
+            <div className="mt-4 h-[420px] overflow-hidden rounded-xl border border-border bg-white">
+              <MapView
+                projects={projects}
+                userLocation={null}
+                projectCounts={projectCounts}
+                onProjectClick={(projectId) => navigate(`/project/${projectId}`)}
+              />
             </div>
+
+            {density.length === 0 && (
+              <p className="mt-3 text-sm text-muted-foreground">
+                No issues raised yet.
+              </p>
+            )}
           </section>
 
-          <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-            <h2 className="text-lg font-semibold text-foreground">Top Issue Zones</h2>
+          {/* Top Issue Zones */}
+          <section className="rounded-2xl border border-border bg-white p-5 shadow-sm">
+            <h2 className="text-lg text-foreground" style={{ fontWeight: 600 }}>
+              Top Issue Zones
+            </h2>
             <p className="mt-1 text-sm text-muted-foreground">
               Projects with highest complaint concentration.
             </p>
 
             <div className="mt-4 space-y-3">
-              {issueDensity.slice(0, 10).map((item) => (
-                <article key={item.project.id} className="rounded-xl border border-border bg-background p-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-semibold text-foreground">{item.project.name}</p>
-                    <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
-                      {item.count} issues
-                    </span>
+              {density.slice(0, 8).map((item, index) => (
+                <button
+                  key={item.project.id}
+                  type="button"
+                  onClick={() => navigate(`/project/${item.project.id}`)}
+                  className="flex w-full items-start gap-4 rounded-xl border border-border bg-slate-50/50 p-4 text-left transition hover:bg-white hover:shadow-sm"
+                >
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-xs text-primary"
+                    style={{ fontWeight: 700 }}
+                  >
+                    #{index + 1}
                   </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {item.project.location.city}, {item.project.location.state}
-                  </p>
-                  <div className="mt-2 flex flex-wrap gap-2 text-xs text-foreground">
-                    <span className="rounded-md bg-secondary px-2 py-1">Open: {item.openCount}</span>
-                    <span className="rounded-md bg-secondary px-2 py-1">Avg Severity: {item.avgSeverity}</span>
-                    <span className="rounded-md bg-secondary px-2 py-1">Max Severity: {item.maxSeverity}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm text-foreground truncate" style={{ fontWeight: 600 }}>
+                      {item.project.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {item.project.location.city}, {item.project.location.state}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <span
+                        className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] text-blue-700"
+                        style={{ fontWeight: 600 }}
+                      >
+                        {item.count} issues
+                      </span>
+                      <span
+                        className="rounded-md bg-amber-50 px-2 py-0.5 text-[11px] text-amber-700"
+                        style={{ fontWeight: 600 }}
+                      >
+                        Open: {item.openCount}
+                      </span>
+                      <span
+                        className="rounded-md bg-red-50 px-2 py-0.5 text-[11px] text-red-700"
+                        style={{ fontWeight: 600 }}
+                      >
+                        Sev: {item.avgSeverity}
+                      </span>
+                    </div>
                   </div>
-                </article>
+                </button>
               ))}
 
-              {issueDensity.length === 0 ? (
-                <div className="rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
-                  No issues have been raised yet.
+              {density.length === 0 && (
+                <div className="rounded-xl border border-border bg-slate-50 p-6 text-center text-sm text-muted-foreground">
+                  No issues raised yet.
                 </div>
-              ) : null}
+              )}
             </div>
           </section>
         </div>
@@ -326,13 +259,38 @@ function Issues() {
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function SummaryCard({
+  icon: Icon,
+  label,
+  value,
+  bg,
+  fg,
+  iconBg,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number;
+  bg: string;
+  fg: string;
+  iconBg: string;
+}) {
   return (
-    <div className="rounded-xl border border-border bg-secondary px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
+    <div
+      className={`flex items-center gap-4 rounded-xl border border-border p-4 ${bg} ${fg}`}
+    >
+      <div
+        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${iconBg}`}
+      >
+        <Icon className="h-5 w-5" />
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wider" style={{ fontWeight: 500 }}>
+          {label}
+        </p>
+        <p className="mt-0.5 text-2xl" style={{ fontWeight: 700 }}>
+          {value}
+        </p>
+      </div>
     </div>
   );
 }
-
-export default Issues;

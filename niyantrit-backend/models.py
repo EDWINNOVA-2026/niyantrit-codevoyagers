@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON, Boolean, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, JSON, Boolean, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -66,6 +66,8 @@ class User(Base):
     complaints_created = relationship("Complaint", back_populates="created_by", foreign_keys="Complaint.created_by_id")
     complaints_assigned = relationship("ComplaintRouting", back_populates="assigned_official")
     media_uploaded = relationship("Media", back_populates="uploaded_by")
+    complaint_supports = relationship("ComplaintSupport", back_populates="user")
+    notification_tokens = relationship("NotificationToken", back_populates="user")
 
 # Project Table
 class Project(Base):
@@ -141,6 +143,44 @@ class Complaint(Base):
     created_by = relationship("User", back_populates="complaints_created", foreign_keys=[created_by_id])
     routing = relationship("ComplaintRouting", back_populates="complaint")
     media = relationship("Media", back_populates="complaint")
+    supports = relationship(
+        "ComplaintSupport",
+        back_populates="complaint",
+        cascade="all, delete-orphan",
+    )
+
+
+class ComplaintSupport(Base):
+    __tablename__ = "complaint_supports"
+
+    id = Column(Integer, primary_key=True, index=True)
+    complaint_id = Column(Integer, ForeignKey("complaints.id"), index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint(
+            "complaint_id",
+            "user_id",
+            name="uq_complaint_support_complaint_user",
+        ),
+    )
+
+    complaint = relationship("Complaint", back_populates="supports")
+    user = relationship("User", back_populates="complaint_supports")
+
+
+class NotificationToken(Base):
+    __tablename__ = "notification_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    token = Column(String, unique=True, index=True)
+    platform = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="notification_tokens")
 
 # Complaint Routing & Assignment Table
 class ComplaintRouting(Base):
