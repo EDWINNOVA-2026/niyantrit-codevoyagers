@@ -356,6 +356,11 @@ def home():
     """Health check endpoint."""
     return {"message": "Niyantrit Backend is running", "version": "1.0.0"}
 
+@app.head("/")
+def home_head():
+    """HEAD health check endpoint for platform probes."""
+    return
+
 @app.get("/health")
 def health_check():
     """Detailed health check."""
