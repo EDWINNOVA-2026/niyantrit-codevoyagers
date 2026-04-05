@@ -6,3 +6,14 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     autoDeploy: true
+
+  - type: web
+    name: niyantrit-frontend
+    env: static
+    rootDir: niyantrit-frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: VITE_API_BASE
+        value: https://niyantrit-codevoyagers.onrender.com
